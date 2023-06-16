@@ -16,7 +16,7 @@ Import the package and create a new `SyntheticusConnect` object:
 ```python
 from SyntheticusConnect import SyntheticusConnect
 
-syntheticus = SyntheticusAPI(base_url="http://your_base_url.com", username="your_username", password="your_password")
+syntheticus = SyntheticusConnect(base_url="http://your_base_url.com", username="your_username", password="your_password")
 
 # Get a specific model
 dag = syntheticus.get_dag("dag_id")

@@ -153,7 +153,7 @@ class SyntheticusConnect:
             "name": name
         }
         response = requests.post(url, data=json.dumps(body), headers=self._authorized_headers())
-        if response.status_code == 200:
+        if response.status_code == 201:
             project_data = response.json()
             project_id = project_data.get('id')
             project_name = project_data.get('name')
@@ -167,7 +167,7 @@ class SyntheticusConnect:
 
             self.projects[project_id] = project_name
 
-        return response.json()
+        #return response.json()
 
     def get_projects(self):
         """

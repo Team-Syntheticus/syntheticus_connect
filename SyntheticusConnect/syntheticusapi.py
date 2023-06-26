@@ -225,6 +225,31 @@ class SyntheticusConnect:
             return "Project deleted successfully."
         else:
             return "Error deleting project."
+        
+    import requests
+
+
+    def upload_data(self, project_id, file_path, data_set_folder_name):
+        url = f"{self.host}/api/projects/{project_id}/upload-data/"
+        
+        # Prepare the form-data payload
+        payload = {
+            "data_set_folder_name": data_set_folder_name
+        }
+        
+        # Load the file for upload
+        files = {
+            "file": open(file_path, "rb")
+        }
+        
+        # Send the POST request
+        response = requests.post(url, data=payload, files=files)
+        
+        if response.status_code == 200:
+            print("Data uploaded successfully.")
+        else:
+            print("Error uploading data. Status code:", response.status_code)
+
 
     def _authorized_headers(self):
         """

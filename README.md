@@ -1,4 +1,4 @@
-# SyntheticusConnect
+# syntheticus_connect
 ## Overview
 
 SyntheticusConnect is a Python client for Syntheticus, designed to make interactions with the Syntheticus service easier and more Pythonic.

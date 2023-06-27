@@ -10,7 +10,6 @@ setup(
     install_requires=[
         'requests',
         'pandas',
-        'json',
         'tabulate'
     ],
     classifiers=[

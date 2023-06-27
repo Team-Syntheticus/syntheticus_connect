@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='syntheticusConnect',
+    name='syntheticus_connect',
     version='0.1.0',
     description='A Python client for Syntheticus',
     author='Valerio Mazzone',

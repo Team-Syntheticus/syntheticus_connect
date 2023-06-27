@@ -242,8 +242,8 @@ class syntheticus_client:
                 ]
                 table_data.append(row)
 
-            # Define table headers
-            headers = ['Dataset Name', 'Dataset ID', 'Project ID']  #, 'Name']  # Uncomment 'Name' if needed
+        # Define table headers
+        headers = ['Dataset Name', 'Dataset ID', 'Project ID']  #, 'Name']  # Uncomment 'Name' if needed
 
         # Print table
         print(tabulate(table_data, headers=headers, tablefmt='pretty'))

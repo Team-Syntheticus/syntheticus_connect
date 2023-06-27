@@ -1,15 +1,13 @@
 import requests
 import json
-import os
 import logging
 
 import requests
 import json
 
-import pprint
 from tabulate import tabulate
 
-class SyntheticusConnect:
+class syntheticus_client:
     """
     A class for interacting with the Syntheticus API.
     """

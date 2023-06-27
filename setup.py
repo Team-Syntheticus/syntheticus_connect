@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='SyntheticusConnect',
+    name='syntheticusConnect',
     version='0.1.0',
     description='A Python client for Syntheticus',
     author='Valerio Mazzone',
@@ -11,7 +11,7 @@ setup(
         'requests',
         'pandas',
         'json',
-        'os'
+        'tabulate'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

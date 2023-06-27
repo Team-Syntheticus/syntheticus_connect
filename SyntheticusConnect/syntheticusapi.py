@@ -6,10 +6,24 @@ import logging
 import requests
 import json
 
+import pprint
+from tabulate import tabulate
+
 class SyntheticusConnect:
     """
     A class for interacting with the Syntheticus API.
     """
+    def _authorized_headers(self):
+        """
+        Get the authorized headers including the authentication token.
+
+        Returns:
+            dict: The headers dictionary.
+        """
+        return {
+            'Authorization': f'Token {self.token}',
+            'Content-Type': 'application/json'
+                }
 
     def __init__(self, host):
         """
@@ -24,6 +38,9 @@ class SyntheticusConnect:
         self.user = None
         self.password = None
         self.projects = {}
+        self.session = requests.Session()
+        #self.session.auth = (self.user, self.password)
+        self.session.auth = ('airflow', 'airflow')
 
     def registration(self, username, email, password):
         """
@@ -166,8 +183,8 @@ class SyntheticusConnect:
             print("-" * 20)
 
             self.projects[project_id] = project_name
-
-        #return response.json()
+        else:
+            print('Error creating the project.')
 
     def get_projects(self):
         """
@@ -181,21 +198,28 @@ class SyntheticusConnect:
         if response.status_code == 200:
             projects_data = response.json().get('results', [])
             if projects_data:
-                print("Projects:")
+                # Prepare data for table
+                table_data = []
                 for project in projects_data:
-                    project_id = project.get('id')
-                    project_name = project.get('name')
-                    created_at = project.get('created_at')
-                    print(f"ID: {project_id}")
-                    print(f"Name: {project_name}")
-                    print(f"Created at: {created_at}")
-                    print("-" * 20)
+                    row = [
+                        project.get('id'),
+                        project.get('name'),
+                        project.get('created_at'),
+                    ]
+                    table_data.append(row)
+
+                # Define table headers
+                headers = ['Project ID', 'Project Name', 'Created At']
+
+                # Print table
+                print("Projects:")
+                print(tabulate(table_data, headers=headers, tablefmt='pretty'))
             else:
                 print("No projects found.")
         else:
             print("Error fetching projects.")
 
-    def list_dataset_folders(self, project_id):
+    def get_datasets(self, project_id):
         """
         List the dataset folders for a project.
 
@@ -207,7 +231,25 @@ class SyntheticusConnect:
         """
         url = f"{self.host}/api/projects/{project_id}/list-dataset-folders/"
         response = requests.get(url, headers=self._authorized_headers())
-        return response.json()
+        data = response.json()
+        # Prepare data for table
+        table_data = []
+        for result in data.get('results', []):
+            for dataset in result.get('datasets', []):
+                row = [
+                    dataset.get('dataset_name'),
+                    dataset.get('id'),
+                    result.get('project'),
+                    # result.get('name'),  # Uncomment this if the 'name' field exists
+                ]
+                table_data.append(row)
+
+            # Define table headers
+            headers = ['Dataset Name', 'Dataset ID', 'Project ID']  #, 'Name']  # Uncomment 'Name' if needed
+
+        # Print table
+        print(tabulate(table_data, headers=headers, tablefmt='pretty'))
+
 
     def delete_project(self, project_id):
         """
@@ -225,48 +267,23 @@ class SyntheticusConnect:
             return "Project deleted successfully."
         else:
             return "Error deleting project."
-        
-    import requests
-
 
     def upload_data(self, project_id, file_path, data_set_folder_name):
         url = f"{self.host}/api/projects/{project_id}/upload-data/"
-        
-        # Prepare the form-data payload
-        payload = {
-            "data_set_folder_name": data_set_folder_name
-        }
-        
-        # Load the file for upload
-        files = {
-            "file": open(file_path, "rb")
-        }
-        
-        # Send the POST request
-        response = requests.post(url, data=payload, files=files)
-        
-        if response.status_code == 200:
-            print("Data uploaded successfully.")
-        else:
-            print("Error uploading data. Status code:", response.status_code)
-
-
-    def _authorized_headers(self):
-        """
-        Get the authorized headers including the authentication token.
-
-        Returns:
-            dict: The headers dictionary.
-        """
-        return {
-            'Authorization': f'Token {self.token}',
-            'Content-Type': 'application/json'
-        }
+                
+        payload = {'dataset_folder_name': 'iris_new'}
+        files=[
+        #('files',('demo_metadata.json',open('/home/alexandr/Downloads/Syntheticus/data_orig/demo_metadata.json','rb'),'application/json')),
+        ('files',('iris_new.csv',open(file_path,'rb'),'text/csv'))
+        ]
+        headers = {'Authorization': f'Token {self.token}'}
+        response = requests.request("POST", url, headers=headers, data=payload, files=files)
+        print(response.text)
 
     def list_models(self):
         """This method lists all the available models"""
         url = f"{self.host_airflow}/api/v1/dags"
-        response = requests.get(url)
+        response = self.session.get(url)
         if response.status_code == 200:
             models = response.json().get('dags', [])
             if models:
@@ -280,68 +297,35 @@ class SyntheticusConnect:
         else:
             print("Error fetching models.",response.status_code)
 
-    # def __init__(self, base_url, username, password, main_data_dir='/opt/airflow/data/'):
-    #     self.base_url = base_url
-    #     self.username = username
-    #     self.password = password
-    #     self.main_data_dir = main_data_dir
-    #     self.session = requests.Session()
-        
-        
+    def get_dag(self, dag_id):
+        """This method returns the details of a specific dag"""
+        url = f"{self.base_url}/api/v1/dags/{dag_id}"
+        return self._api_get(url)
 
+    def model_runs(self, dag_id):
+        """This method returns the runs of a specific dag"""
+        url = f"{self.base_url}/api/v1/dags/{dag_id}/dagRuns"
+        dag_runs = self._api_get(url)
+        for dag_run in dag_runs["dag_runs"]:
+            dag_run_id = dag_run["dag_run_id"]
+            state = dag_run["state"]
+            logging.info(f"Model run ID: {dag_run_id}, state: {state}")
 
-    # def get_dag(self, dag_id):
-    #     """This method returns the details of a specific dag"""
-    #     url = f"{self.base_url}/api/v1/dags/{dag_id}"
-    #     return self._api_get(url)
-
-    # def model_runs(self, dag_id):
-    #     """This method returns the runs of a specific dag"""
-    #     url = f"{self.base_url}/api/v1/dags/{dag_id}/dagRuns"
-    #     dag_runs = self._api_get(url)
-    #     for dag_run in dag_runs["dag_runs"]:
-    #         dag_run_id = dag_run["dag_run_id"]
-    #         state = dag_run["state"]
-    #         logging.info(f"Model run ID: {dag_run_id}, state: {state}")
-
-    # def synthetize(self, dag_id, run_id=None, project_name=None):
-    #     """This method triggers the synthetization process"""
-    #     url = f"{self.base_url}/api/v1/dags/{dag_id}/dagRuns"
-    #     conf = {"main_data_dir": self.main_data_dir, "project_name": project_name}
-    #     data = {"dag_run_id": run_id, "conf": conf}
-    #     try:
-    #         response = self.session.post(url, json=data)
-    #         response.raise_for_status()
-    #         logging.info("Synthetization triggered successfully!")
-    #     except requests.exceptions.HTTPError as errh:
-    #         logging.error(f"Http Error: {errh}")
-    #     except requests.exceptions.ConnectionError as errc:
-    #         logging.error(f"Error Connecting: {errc}")
-    #     except requests.exceptions.Timeout as errt:
-    #         logging.error(f"Timeout Error: {errt}")
-    #     except requests.exceptions.RequestException as err:
-    #         logging.error(f"Something went wrong: {err}")
-
-    # def list_models(self):
-    #     """This method lists all the available models"""
-    #     url = f"{self.base_url}/api/v1/dags"
-    #     models = self._api_get(url)
-    #     for item in models['dags']:
-    #        logging.info(f"Model name: {item['dag_id']}, description: {item['description']}")
-
-    # def simple_visualize(self,project_name):
-    #     """This method visualizes the synthetized data"""
-    #     os.chdir('/data')
-    #     folder_path = f"{project_name}/airflow_data/data_synth"
-    #     try:
-    #         for filename in os.listdir(folder_path):
-    #             if filename.endswith(".pkl"):
-    #                 file_path = os.path.join(folder_path, filename)
-    #                 df = pd.read_pickle(file_path)
-    #                 logging.info(f"Table from {filename}:")
-    #                 logging.info(df)
-    #     except FileNotFoundError:
-    #         logging.error("File not found")
-    #     except Exception as e:
-    #         logging.error(f"An error occurred: {e}")
+    def synthetize(self, dag_id, run_id=None, project_name=None):
+        """This method triggers the synthetization process"""
+        url = f"{self.base_url}/api/v1/dags/{dag_id}/dagRuns"
+        conf = {"main_data_dir": self.main_data_dir, "project_name": project_name}
+        data = {"dag_run_id": run_id, "conf": conf}
+        try:
+            response = self.session.post(url, json=data)
+            response.raise_for_status()
+            logging.info("Synthetization triggered successfully!")
+        except requests.exceptions.HTTPError as errh:
+            logging.error(f"Http Error: {errh}")
+        except requests.exceptions.ConnectionError as errc:
+            logging.error(f"Error Connecting: {errc}")
+        except requests.exceptions.Timeout as errt:
+            logging.error(f"Timeout Error: {errt}")
+        except requests.exceptions.RequestException as err:
+            logging.error(f"Something went wrong: {err}")
 

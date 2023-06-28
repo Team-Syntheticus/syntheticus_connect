@@ -309,11 +309,11 @@ class syntheticus_client:
             state = dag_run["state"]
             logging.info(f"Model run ID: {dag_run_id}, state: {state}")
 
-    def synthetize(self, dag_id, run_id=None, project_name=None):
+    def synthetize(self, dag_id, p):
         """This method triggers the synthetization process"""
-        url = f"{self.base_url}/api/v1/dags/{dag_id}/dagRuns"
-        conf = {"main_data_dir": self.main_data_dir, "project_name": project_name}
-        data = {"dag_run_id": run_id, "conf": conf}
+        url = f"{self.host_airflow}/api/v1/dags/{dag_id}/dagRuns"
+        #conf = {"main_data_dir": self.main_data_dir, "project_name": project_name}
+        #data = {"dag_run_id": dag_id, "conf": conf}
         try:
             response = self.session.post(url, json=data)
             response.raise_for_status()

@@ -1,0 +1,10 @@
+config_version: '1.0'
+config_name: base
+config_steps:
+    - data:
+        dataset_version: f72c734a-4dcc-4d50-bac2-ae5b792d6f1f # NAME OF DATASET VERSION
+    - transform:
+    - model:
+    - sample:
+        number_of_rows: ''
+    - metrics:

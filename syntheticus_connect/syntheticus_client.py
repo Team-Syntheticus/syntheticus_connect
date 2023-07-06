@@ -1,10 +1,8 @@
 import requests
 import json
 import logging
-
-import requests
-import json
-
+import os
+from datetime import datetime
 from tabulate import tabulate
 
 class syntheticus_client:
@@ -39,8 +37,12 @@ class syntheticus_client:
         self.session = requests.Session()
         #self.session.auth = (self.user, self.password)
         self.session.auth = ('airflow', 'airflow')
+        self.main_data_dir = './media/'
+        self.project_id = None
+        self.dag_id = None  
+        self.dataset_id = None
 
-    def registration(self, username, email, password):
+    def register(self, username, email, password):
         """
         Register a new user.
 
@@ -60,7 +62,7 @@ class syntheticus_client:
             "password2": password
         }
         response = requests.post(url, data=json.dumps(body), headers={'Content-Type': 'application/json'})
-        return response.json()
+        return response.json() # do not show the key
 
     def login(self, username, password):
         """
@@ -228,22 +230,34 @@ class syntheticus_client:
             dict: The response JSON containing the dataset folders.
         """
         url = f"{self.host}/api/projects/{project_id}/list-dataset-folders/"
-        response = requests.get(url, headers=self._authorized_headers())
-        data = response.json()
+
+        payload = {}
+        files = {}
+        headers = {
+        'Authorization': f'Token {self.token}'
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload, files=files)
+        data = json.loads(response.text)
+
         # Prepare data for table
         table_data = []
         for result in data.get('results', []):
-            for dataset in result.get('datasets', []):
-                row = [
-                    dataset.get('dataset_name'),
-                    dataset.get('id'),
-                    result.get('project'),
-                    # result.get('name'),  # Uncomment this if the 'name' field exists
-                ]
-                table_data.append(row)
+            for outer_dataset in result.get('datasets', []):
+                for dataset in outer_dataset.get('datasets', []):
+                    row = [
+                        dataset.get('dataset_name'),
+                        dataset.get('id'),
+                        result.get('project'),
+                        result.get('data_type'),
+                        dataset.get('size'),
+                        dataset.get('rows_number'),
+                        len(dataset.get('dataset_metadata', {}).get('column_types', {}))
+                    ]
+                    table_data.append(row)
 
         # Define table headers
-        headers = ['Dataset Name', 'Dataset ID', 'Project ID']  #, 'Name']  # Uncomment 'Name' if needed
+        headers = ['Dataset Name', 'Dataset ID', 'Project ID', 'Data Type', 'Size', 'Number of Rows', 'Number of Columns']
 
         # Print table
         print(tabulate(table_data, headers=headers, tablefmt='pretty'))
@@ -266,16 +280,42 @@ class syntheticus_client:
         else:
             return "Error deleting project."
 
-    def upload_data(self, project_id, file_path, data_set_folder_name):
+    @staticmethod
+    def get_mime_type(file_name):
+        extension = os.path.splitext(file_name)[1]
+        return {
+            '.json': 'application/json',
+            '.csv': 'text/csv',
+        }.get(extension, 'application/octet-stream')
+
+    def upload_data(self, project_id, dataset_name, folder_path, file_names):
         url = f"{self.host}/api/projects/{project_id}/upload-data/"
-                
-        payload = {'dataset_folder_name': 'iris_new'}
-        files=[
-        #('files',('demo_metadata.json',open('/home/alexandr/Downloads/Syntheticus/data_orig/demo_metadata.json','rb'),'application/json')),
-        ('files',('iris_new.csv',open(file_path,'rb'),'text/csv'))
+        payload = {'dataset_folder_name': dataset_name}
+        files = [
+            ('files', (file_name, open(f'{folder_path}/{file_name}','rb'), self.get_mime_type(file_name))) for file_name in file_names
         ]
-        headers = {'Authorization': f'Token {self.token}'}
+        headers = {
+            'Authorization': f'Token {self.token}'
+        }
+
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
+        
+        # Check if request was successful
+        if response.status_code == 200:
+            print('Files uploaded successfully.')
+        else:
+            print(f'Error occurred while uploading files: {response.text}')
+        return response
+
+    def upload_conf(self, project_id, file_path):
+        url_upload_conf = f'{self.host}/api/projects/{project_id}/update-conf-file/'
+
+        headers = {'Authorization': f'Token {self.token}'}
+                #'Accept': 'application/json'}
+        files=[
+        ('file',('config.yaml',open(file_path,'rb'),'text/yaml'))
+        ]
+        response = requests.request("POST", url_upload_conf, headers=headers, files=files)
         print(response.text)
 
     def list_models(self):
@@ -286,10 +326,14 @@ class syntheticus_client:
             models = response.json().get('dags', [])
             if models:
                 print("Available Models:")
+                table_data = []
                 for item in models:
                     dag_id = item.get('dag_id')
                     description = item.get('description')
-                    print(f"Model name: {dag_id}, description: {description}")
+                    table_data.append([dag_id, description])
+
+                headers = ['Model Name', 'Description']
+                print(tabulate(table_data, headers=headers, tablefmt='pretty'))
             else:
                 print("No models available.")
         else:
@@ -309,15 +353,27 @@ class syntheticus_client:
             state = dag_run["state"]
             logging.info(f"Model run ID: {dag_run_id}, state: {state}")
 
-    def synthetize(self, dag_id, p):
+    def synthetize(self):
         """This method triggers the synthetization process"""
-        url = f"{self.host_airflow}/api/v1/dags/{dag_id}/dagRuns"
-        #conf = {"main_data_dir": self.main_data_dir, "project_name": project_name}
-        #data = {"dag_run_id": dag_id, "conf": conf}
+
+        if not self.project_id or not self.dag_id:
+            raise ValueError("Please specify project_id and dag_id.")
+
+        now = datetime.now()
+        time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        run_id = self.project_id + '_' + time
+
+        url = f"{self.host_airflow}/api/v1/dags/{self.dag_id}/dagRuns"
+        conf = {"main_data_dir": self.main_data_dir, "project_name": self.project_id}
+        data = {"dag_run_id": run_id, "conf": conf}
+
         try:
             response = self.session.post(url, json=data)
             response.raise_for_status()
             logging.info("Synthetization triggered successfully!")
+            return 'Synthetization triggered successfully!'
+
         except requests.exceptions.HTTPError as errh:
             logging.error(f"Http Error: {errh}")
         except requests.exceptions.ConnectionError as errc:
@@ -326,4 +382,6 @@ class syntheticus_client:
             logging.error(f"Timeout Error: {errt}")
         except requests.exceptions.RequestException as err:
             logging.error(f"Something went wrong: {err}")
-
+        finally:
+            self.project_id = None
+            self.dag_id = None

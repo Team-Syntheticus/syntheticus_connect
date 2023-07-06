@@ -2,7 +2,7 @@ config_version: '1.0'
 config_name: base
 config_steps:
     - data:
-        dataset_version: f72c734a-4dcc-4d50-bac2-ae5b792d6f1f # NAME OF DATASET VERSION
+        dataset_version: 854b08fa-ab8b-47f2-a126-29f0d9783899 # NAME OF DATASET VERSION
     - transform:
     - model:
     - sample:

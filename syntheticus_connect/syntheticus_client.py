@@ -244,10 +244,12 @@ class syntheticus_client:
         table_data = []
         for result in data.get('results', []):
             for outer_dataset in result.get('datasets', []):
+                outer_dataset.get('id')
                 for dataset in outer_dataset.get('datasets', []):
                     row = [
                         dataset.get('dataset_name'),
-                        dataset.get('id'),
+                        #dataset.get('id'),
+                        result.get('id'),
                         result.get('project'),
                         result.get('data_type'),
                         dataset.get('size'),

@@ -242,7 +242,12 @@ class syntheticus_client:
             print(f"Project selected: {project_id} with name {self.projects[project_id]}")
         else:
             print(f"Project with ID {project_id} not found.")
-
+    
+    def wrap_text(text, width):
+        wrapped_lines = textwrap.wrap(text, width=width)
+        wrapped_text = '\n'.join(wrapped_lines)
+        return wrapped_text
+    
     def get_datasets(self):
         """
         List the dataset folders for a project.
@@ -273,13 +278,10 @@ class syntheticus_client:
         for result in data.get('results', []):
             for outer_dataset in result.get('datasets', []):
                 for dataset in outer_dataset.get('datasets', []):
-                    # Wrap the Project ID to multiple lines
-                    wrapped_project_id = textwrap.wrap(result.get('project'), width=10)
-
                     row = [
                         dataset.get('dataset_name'),
-                        dataset.get('dataset_id'),
-                        '\n'.join(wrapped_project_id),  # Join the wrapped ID with newline characters
+                        result.get('id'),
+                        result.get('project'),
                         result.get('data_type'),
                         dataset.get('size'),
                         dataset.get('rows_number'),
@@ -288,7 +290,8 @@ class syntheticus_client:
                     ]
                     table_data.append(row)
 
-        # ...
+                    # Add the dataset to the lookup dictionary using its unique ID as the key
+                    self.datasets[result.get('id')] = dataset.get('dataset_name')
 
         # Define table headers
         headers = ['Dataset Name', 'Dataset ID', 'Project ID', 'Data Type', 'Size', 'Number of Rows', 'Number of Columns', 'Status']

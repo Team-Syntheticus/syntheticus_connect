@@ -9,6 +9,7 @@ from IPython.core.getipython import get_ipython
 import yaml
 from ruamel.yaml import YAML
 import os
+import textwrap
 
 class syntheticus_client:
     """
@@ -272,10 +273,13 @@ class syntheticus_client:
         for result in data.get('results', []):
             for outer_dataset in result.get('datasets', []):
                 for dataset in outer_dataset.get('datasets', []):
+                    # Wrap the Project ID to multiple lines
+                    wrapped_project_id = textwrap.wrap(result.get('project'), width=10)
+
                     row = [
                         dataset.get('dataset_name'),
-                        result.get('id'),
-                        result.get('project'),
+                        dataset.get('dataset_id'),
+                        '\n'.join(wrapped_project_id),  # Join the wrapped ID with newline characters
                         result.get('data_type'),
                         dataset.get('size'),
                         dataset.get('rows_number'),
@@ -284,8 +288,7 @@ class syntheticus_client:
                     ]
                     table_data.append(row)
 
-                    # Add the dataset to the lookup dictionary using its unique ID as the key
-                    self.datasets[result.get('id')] = dataset.get('dataset_name')
+        # ...
 
         # Define table headers
         headers = ['Dataset Name', 'Dataset ID', 'Project ID', 'Data Type', 'Size', 'Number of Rows', 'Number of Columns', 'Status']

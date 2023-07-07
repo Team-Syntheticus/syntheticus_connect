@@ -4,6 +4,11 @@ import logging
 import os
 from datetime import datetime
 from tabulate import tabulate
+import os
+from IPython.core.getipython import get_ipython
+import yaml
+from ruamel.yaml import YAML
+import os
 
 class syntheticus_client:
     """
@@ -28,20 +33,24 @@ class syntheticus_client:
         Args:
             host (str): The base URL of the API.
         """
-        self.host = host + ':8000'
-        self.host_airflow = host + ':8080'
-        self.token = None
-        self.user = None
-        self.password = None
-        self.projects = {}
-        self.session = requests.Session()
-        #self.session.auth = (self.user, self.password)
-        self.session.auth = ('airflow', 'airflow')
-        self.main_data_dir = './media/'
-        self.project_id = None
-        self.dag_id = None  
-        self.dataset_id = None
 
+        self.host = host + ':8000' # host syntheticus nav
+        self.host_airflow = host + ':8080' # host airflow
+        self.token = None # user token assigned at login
+        self.user = None # username
+        self.password = None # passwod
+        self.projects = {} # dictionary with the list of projects
+        self.datasets = {} # dictionary with the list of datasets for a project
+        self.session = requests.Session()
+        self.session.auth = ('airflow', 'airflow') # airflow credentials will be deprecated
+        self.main_data_dir = './media/' # directory in syntheticus nav
+        self.project_id = None # selected project id
+        self.project_name = None # selected project name
+        self.model_id = None  # selected model id
+        self.dataset_id = None # selected dataset id
+        self.dataset_name = None # selected dataset name
+        self.config_file_path = None # path to the config file
+        
     def register(self, username, email, password):
         """
         Register a new user.
@@ -75,6 +84,8 @@ class syntheticus_client:
         Returns:
             str: The login status message.
         """
+        
+        # reinitailzias variables
         self.user = username
         self.password = password
         url = f"{self.host}/dj-rest-auth/login/"
@@ -183,6 +194,7 @@ class syntheticus_client:
             print("-" * 20)
 
             self.projects[project_id] = project_name
+            self.project_id = project_id    
         else:
             print('Error creating the project.')
 
@@ -205,11 +217,14 @@ class syntheticus_client:
                         project.get('id'),
                         project.get('name'),
                         project.get('created_at'),
+                        "Selected" if project.get('id') == self.project_id else "Not Selected"
                     ]
                     table_data.append(row)
+                    # Update the project lookup dictionary
+                    self.projects[project.get('id')] = project.get('name')
 
                 # Define table headers
-                headers = ['Project ID', 'Project Name', 'Created At']
+                headers = ['Project ID', 'Project Name', 'Created At', 'Status']
 
                 # Print table
                 print("Projects:")
@@ -218,8 +233,16 @@ class syntheticus_client:
                 print("No projects found.")
         else:
             print("Error fetching projects.")
+    
+    def select_project(self, project_id):
+        if project_id in self.projects:
+            self.project_id = project_id
+            self.project_name = self.projects[project_id]
+            print(f"Project selected: {project_id} with name {self.projects[project_id]}")
+        else:
+            print(f"Project with ID {project_id} not found.")
 
-    def get_datasets(self, project_id):
+    def get_datasets(self):
         """
         List the dataset folders for a project.
 
@@ -229,8 +252,12 @@ class syntheticus_client:
         Returns:
             dict: The response JSON containing the dataset folders.
         """
-        url = f"{self.host}/api/projects/{project_id}/list-dataset-folders/"
-
+        
+        # Check if project_id exists in the lookup dictionary
+        if self.project_id not in self.projects:
+            print("Please select a valid project ID.")
+            return
+        url = f"{self.host}/api/projects/{self.project_id}/list-dataset-folders/"
         payload = {}
         files = {}
         headers = {
@@ -244,27 +271,37 @@ class syntheticus_client:
         table_data = []
         for result in data.get('results', []):
             for outer_dataset in result.get('datasets', []):
-                outer_dataset.get('id')
                 for dataset in outer_dataset.get('datasets', []):
                     row = [
                         dataset.get('dataset_name'),
-                        #dataset.get('id'),
                         result.get('id'),
                         result.get('project'),
                         result.get('data_type'),
                         dataset.get('size'),
                         dataset.get('rows_number'),
-                        len(dataset.get('dataset_metadata', {}).get('column_types', {}))
+                        len(dataset.get('dataset_metadata', {}).get('column_types', {})),
+                        'Selected' if self.dataset_id == result.get('id') else 'Not Selected',
                     ]
                     table_data.append(row)
 
+                    # Add the dataset to the lookup dictionary using its unique ID as the key
+                    self.datasets[result.get('id')] = dataset.get('dataset_name')
+
         # Define table headers
-        headers = ['Dataset Name', 'Dataset ID', 'Project ID', 'Data Type', 'Size', 'Number of Rows', 'Number of Columns']
+        headers = ['Dataset Name', 'Dataset ID', 'Project ID', 'Data Type', 'Size', 'Number of Rows', 'Number of Columns', 'Status']
 
         # Print table
         print(tabulate(table_data, headers=headers, tablefmt='pretty'))
 
+    def select_dataset(self, dataset_id):
+        if dataset_id in self.datasets:
+            self.dataset_id = dataset_id
+            self.dataset_name  = self.datasets[dataset_id]  
+            print(f"Dataset selected: {dataset_id} with name {self.datasets[dataset_id]}")
+        else:
+            print(f"Dataset with ID {dataset_id} not found.")
 
+        
     def delete_project(self, project_id):
         """
         Delete a project.
@@ -290,8 +327,13 @@ class syntheticus_client:
             '.csv': 'text/csv',
         }.get(extension, 'application/octet-stream')
 
-    def upload_data(self, project_id, dataset_name, folder_path, file_names):
-        url = f"{self.host}/api/projects/{project_id}/upload-data/"
+    def upload_data(self, dataset_name, folder_path, file_names):
+        # Check if project_id exists in the lookup dictionary
+        if self.project_id not in self.projects:
+            print("Please select a valid project ID.")
+            return
+
+        url = f"{self.host}/api/projects/{self.project_id}/upload-data/"
         payload = {'dataset_folder_name': dataset_name}
         files = [
             ('files', (file_name, open(f'{folder_path}/{file_name}','rb'), self.get_mime_type(file_name))) for file_name in file_names
@@ -307,20 +349,69 @@ class syntheticus_client:
             print('Files uploaded successfully.')
         else:
             print(f'Error occurred while uploading files: {response.text}')
-        return response
+        return
 
-    def upload_conf(self, project_id, file_path):
-        url_upload_conf = f'{self.host}/api/projects/{project_id}/update-conf-file/'
+    def upload_conf(self):
+        url_upload_conf = f'{self.host}/api/projects/{self.project_id}/update-conf-file/'
+
+        # Prepare the configuration data
+        config_data = {
+            'config_version': '1.0',
+            'config_name': 'base',
+            'config_steps': [
+                {
+                    'data': {
+                        'dataset_version': self.dataset_id,  # Use the selected project ID
+                    },
+                },
+                {'transform': None},
+                {'model': None},
+                {
+                    'sample': {
+                        'number_of_rows': '',
+                    },
+                },
+                {'metrics': None},
+            ]
+        }
+
+        # Save configuration data to a YAML file with the same name as the project
+        self.config_file_path = f"{self.project_name}.yaml"
+        yaml = YAML()
+        with open(self.config_file_path, 'w') as file:
+            yaml.dump(config_data, file)
 
         headers = {'Authorization': f'Token {self.token}'}
-                #'Accept': 'application/json'}
-        files=[
-        ('file',('config.yaml',open(file_path,'rb'),'text/yaml'))
-        ]
+        files = [('file', (self.config_file_path, open(self.config_file_path, 'rb'), 'text/yaml'))]
         response = requests.request("POST", url_upload_conf, headers=headers, files=files)
-        print(response.text)
 
-    def list_models(self):
+        if response.status_code == 200:
+            print(f"A basic configuration file has been uploaded in the project {self.project_id}.")
+            print(f"If you want to modify the config file, open the file with {self.project_name}.yaml and customize it.")
+            print("Once finished, save and upload again using the update_conf() method.")
+        else:
+            print(f"Error occurred while uploading the configuration file: {response.text}")
+            
+    def update_conf(self):
+        url_upload_conf = f'{self.host}/api/projects/{self.project_id}/update-conf-file/'
+
+        # Check if the configuration file exists
+        self.config_file_path = f"{self.project_name}.yaml"
+        if not os.path.isfile(self.config_file_path):
+            print("Configuration file not found.")
+            return
+
+        # Upload the configuration file
+        headers = {'Authorization': f'Token {self.token}'}
+        files = [('file', (self.config_file_path, open(self.config_file_path, 'rb'), 'text/yaml'))]
+        response = requests.request("POST", url_upload_conf, headers=headers, files=files)
+
+        if response.status_code == 200:
+            print(f"The configuration file '{self.config_file_path}' has been successfully re-uploaded.")
+        else:
+            print(f"Error occurred while re-uploading the configuration file: {response.text}")
+
+    def get_models(self):
         """This method lists all the available models"""
         url = f"{self.host_airflow}/api/v1/dags"
         response = self.session.get(url)
@@ -334,13 +425,17 @@ class syntheticus_client:
                     description = item.get('description')
                     table_data.append([dag_id, description])
 
-                headers = ['Model Name', 'Description']
+                headers = ['Model ID', 'Description']
                 print(tabulate(table_data, headers=headers, tablefmt='pretty'))
             else:
                 print("No models available.")
         else:
             print("Error fetching models.",response.status_code)
 
+    def select_model(self, model_id):
+            self.model_id = model_id
+            print(f"Dataset {model_id} selected.")
+    
     def get_dag(self, dag_id):
         """This method returns the details of a specific dag"""
         url = f"{self.base_url}/api/v1/dags/{dag_id}"
@@ -358,19 +453,26 @@ class syntheticus_client:
     def synthetize(self):
         """This method triggers the synthetization process"""
 
-        if not self.project_id or not self.dag_id:
-            raise ValueError("Please specify project_id and dag_id.")
+        if not self.project_id or not self.model_id:
+            raise ValueError("Please specify project_id and model_id.")
 
         now = datetime.now()
         time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         run_id = self.project_id + '_' + time
 
-        url = f"{self.host_airflow}/api/v1/dags/{self.dag_id}/dagRuns"
+        url = f"{self.host_airflow}/api/v1/dags/{self.model_id}/dagRuns"
         conf = {"main_data_dir": self.main_data_dir, "project_name": self.project_id}
         data = {"dag_run_id": run_id, "conf": conf}
 
         try:
+            # Print information before triggering synthetization
+            print(f"Synthetization Information:")
+            print(f"Project: {self.project_name} (ID: {self.project_id})")
+            print(f"Dataset: {self.dataset_name} (ID: {self.dataset_id})")
+            print(f"Model: {self.model_id}")
+            print(f"Configuration File: {self.config_file_path}")
+
             response = self.session.post(url, json=data)
             response.raise_for_status()
             logging.info("Synthetization triggered successfully!")
@@ -386,4 +488,7 @@ class syntheticus_client:
             logging.error(f"Something went wrong: {err}")
         finally:
             self.project_id = None
-            self.dag_id = None
+            self.dataset_id = None
+            self.model_id = None
+            self.sconfig_file_path = None
+

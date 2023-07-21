@@ -11,8 +11,8 @@ from ruamel.yaml import YAML
 import os
 import textwrap
 import pandas as pd
-import pickle
-
+import zipfile
+import io
 
 class syntheticus_client:
     """
@@ -523,31 +523,63 @@ class syntheticus_client:
             else: 
                 print("Please select a project_id first.")
                 
+    # def download_data(self, data_to_download):
+    #     if self.project_id and self.commit is not None:
+    #         url = f"{self.host}/api/projects/{self.project_id}/download-airflow-data/"
+    #         payload = json.dumps({
+    #         "commit": f"{self.commit}",
+    #         "data_to_download": f"{data_to_download}"
+    #         })
+    #         headers = {
+    #         'Content-Type': 'application/json',
+    #         'Authorization': f'Token {self.token}'
+    #         }
+
+    #         response = requests.request("POST", url, headers=headers, data=payload)
+
+    #         # # Load the pickled DataFrame from the response
+    #         # df = pickle.loads(response.content)
+
+    #         # # Define the filename
+    #         # filename = f"{self.dataset_name}_synth.csv"
+
+    #         # # Save DataFrame to CSV file
+    #         # df.to_csv(filename, index=False)
+    #                 # Save the response content to a file
+    #         #with open('response.pkl', 'wb') as f:
+    #         #    f.write(response.content)
+
+    #     else:
+    #         print("Please select a project_id and a commit first.")
+
     def download_data(self, data_to_download):
         if self.project_id and self.commit is not None:
             url = f"{self.host}/api/projects/{self.project_id}/download-airflow-data/"
             payload = json.dumps({
-            "commit": f"{self.commit}",
-            "data_to_download": f"{data_to_download}"
+                "commit": f"{self.commit}",
+                "data_to_download": f"{data_to_download}"
             })
             headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Token {self.token}'
+                'Content-Type': 'application/json',
+                'Authorization': f'Token {self.token}'
             }
 
             response = requests.request("POST", url, headers=headers, data=payload)
 
-            # # Load the pickled DataFrame from the response
-            # df = pickle.loads(response.content)
-
-            # # Define the filename
-            # filename = f"{self.dataset_name}_synth.csv"
-
-            # # Save DataFrame to CSV file
-            # df.to_csv(filename, index=False)
-                    # Save the response content to a file
-            with open('response.pkl', 'wb') as f:
+            # Save the response content to a zip file
+            with open(f"{self.dataset_name}_synth.zip", 'wb') as f:
                 f.write(response.content)
+                
+            # Open the zip file
+            with zipfile.ZipFile(io.BytesIO(response.content), 'r') as z:
+                # Loop through each file
+                for filename in z.namelist():
+                    # If the file is a .pkl file
+                    if filename.endswith('.pkl'):
+                        # Load the DataFrame from the pickled data
+                        df = pd.read_pickle(z.open(filename))
+                        # Save the DataFrame to a csv file
+                        df.to_csv(f"{self.dataset_name}_synth.csv", index=False)
 
         else:
             print("Please select a project_id and a commit first.")

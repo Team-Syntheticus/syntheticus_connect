@@ -577,25 +577,28 @@ class syntheticus_client:
             self.sconfig_file_path = None
 
     def list_commits(self):
-        url = f"{self.host}/api/projects/{self.project_id}/commit-logs/"
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Token {self.token}'
-        }
+        if self.project_id is None:
+            print('Please select a project_id first.')
+        else:
+            url = f"{self.host}/api/projects/{self.project_id}/commit-logs/"
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Token {self.token}'
+            }
 
-        response = requests.get(url, headers=headers)
-        response.raise_for_status() 
+            response = requests.get(url, headers=headers)
+            response.raise_for_status() 
 
-        commits = response.json()
-        print(f'List of experiment in the project selected: {self.project_id}.')
-        print(tabulate(commits, headers="keys", tablefmt="pretty"))
+            commits = response.json()
+            print(f'List of experiment in the project selected: {self.project_id}.')
+            print(tabulate(commits, headers="keys", tablefmt="pretty"))
         
     def select_commit(self, commit_id):
             if self.project_id is not None:
                 self.commit = commit_id
                 print(f"Commit {commit_id} selected in project {self.project_id}.")
             else: 
-                print("Please select a project_id first.")
+                print("Please select a project_id first using the select_project() method.")
                 
     # def download_data(self, data_to_download):
     #     if self.project_id and self.commit is not None:

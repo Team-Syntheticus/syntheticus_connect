@@ -460,6 +460,52 @@ class syntheticus_client:
             state = dag_run["state"]
             logging.info(f"Model run ID: {dag_run_id}, state: {state}")
 
+    def fit(self):
+        url = f"{self.host}/api/projects/{self.project_id}/run-dag/"
+
+        payload = json.dumps({
+        "dag_name": f"{self.model_id}",
+        })
+        headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Token {self.token}'
+        }
+
+        try:
+            response = requests.request("POST", url, headers=headers, data=payload)
+
+            # Join the response strings into one string
+            response_string = ''.join(json.loads(response.text))
+
+            # Convert the JSON string into a dictionary
+            response_dict = json.loads(response_string)
+
+            # Print the important information in a nice way
+            print(f"Project Name: {response_dict['conf']['project_name']}")
+            print(f"Model name: {response_dict['dag_id']}")
+            print(f"Model Run ID: {response_dict['dag_run_id']}")
+            print(f"Execution Date: {response_dict['execution_date']}")
+            print(f"State: {response_dict['state']}")
+            print('')
+            print('The synthetization process has been triggered successfully.')
+            
+        except requests.exceptions.HTTPError as errh:
+            logging.error(f"Http Error: {errh}")
+        except requests.exceptions.ConnectionError as errc:
+            logging.error(f"Error Connecting: {errc}")
+        except requests.exceptions.Timeout as errt:
+            logging.error(f"Timeout Error: {errt}")
+        except requests.exceptions.RequestException as err:
+            logging.error(f"Something went wrong: {err}")
+        finally:
+            self.project_id = None
+            self.dataset_id = None
+            self.model_id = None
+            self.sconfig_file_path = None
+
+        
+     
+    #### the following will be deprecated in future versions. Use django API instead.    
     def synthetize(self):
         """This method triggers the synthetization process"""
 

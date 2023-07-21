@@ -639,21 +639,25 @@ class syntheticus_client:
             }
 
             response = requests.request("POST", url, headers=headers, data=payload)
-
-            # Save the response content to a zip file
-            with open(f"{self.dataset_name}_synth.zip", 'wb') as f:
-                f.write(response.content)
-                
-            # Open the zip file
-            with zipfile.ZipFile(io.BytesIO(response.content), 'r') as z:
-                # Loop through each file
-                for filename in z.namelist():
-                    # If the file is a .pkl file
-                    if filename.endswith('.pkl'):
-                        # Load the DataFrame from the pickled data
-                        df = pd.read_pickle(z.open(filename))
-                        # Save the DataFrame to a csv file
-                        df.to_csv(f"{self.dataset_name}_synth.csv", index=False)
+            
+            if data_to_download == 'data_synth' or data_to_download == 'data_real':
+                # Save the response content to a zip file
+                with open(f"{self.dataset_name}_synth.zip", 'wb') as f:
+                    f.write(response.content)
+                    
+                # Open the zip file
+                with zipfile.ZipFile(io.BytesIO(response.content), 'r') as z:
+                    # Loop through each file
+                    for filename in z.namelist():
+                        # If the file is a .pkl file
+                        if filename.endswith('.pkl'):
+                            # Load the DataFrame from the pickled data
+                            df = pd.read_pickle(z.open(filename))
+                            # Save the DataFrame to a csv file
+                            df.to_csv(f"{self.dataset_name}_synth.csv", index=False)
+            elif data_to_download == 'report':
+                with open(f"{self.project_name}_reports.pdf", 'wb') as f:
+                    f.write(response.content)
 
         else:
             print("Please select a project_id and a commit first.")

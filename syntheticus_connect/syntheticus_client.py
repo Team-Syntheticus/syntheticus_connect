@@ -66,7 +66,7 @@ class syntheticus_client:
             password (str): The password for the new user.
 
         Returns:
-            dict: The response JSON containing the registration details.
+            dict: The response JSON containing the registration details, excluding the key.
         """
         url = f"{self.host}/dj-rest-auth/registration/"
         body = {
@@ -75,8 +75,36 @@ class syntheticus_client:
             "password1": password,
             "password2": password
         }
-        response = requests.post(url, data=json.dumps(body), headers={'Content-Type': 'application/json'})
-        return response.json() # do not show the key
+        try:
+            response = requests.post(url, data=json.dumps(body), headers={'Content-Type': 'application/json'})
+            response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
+            
+            # If the response status is 200, parse the JSON response
+            response_json = response.json()
+
+            # If you want to remove the key from the response before returning
+            if 'key' in response_json:
+                del response_json['key']
+
+            # If the response is empty, print a success message
+            if not response_json:
+                print("Successful registration!")
+
+            return response_json
+
+        except requests.exceptions.HTTPError as errh:
+            # If a HTTPError is caught, print the response body for more information
+            print(f"Http Error: {errh}. Response body: {errh.response.text}")
+        except requests.exceptions.ConnectionError as errc:
+            print(f"Error Connecting: {errc}. Response body: {errc.response.text}")
+        except requests.exceptions.Timeout as errt:
+            print(f"Timeout Error: {errt}. Response body: {errt.response.text}")
+        except requests.exceptions.RequestException as err:
+            print(f"An error occurred: {err}. Response body: {err.response.text}")
+        except ValueError:
+            print("Invalid response received. Unable to parse JSON.")
+
+
 
     def login(self, username, password):
         """

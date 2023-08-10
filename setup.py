@@ -10,7 +10,9 @@ setup(
     install_requires=[
         'requests',
         'pandas',
-        'tabulate'
+        'tabulate',
+        'ipywidgets',
+        'ipython'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

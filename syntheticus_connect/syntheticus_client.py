@@ -241,11 +241,11 @@ class syntheticus_client:
         url = f"{self.host}/api/projects/"
         response = requests.get(url, headers=self._authorized_headers())
         if response.status_code == 200:
-            projects_data = response.json().get('results', [])
-            if projects_data:
+            self.projects_data = response.json().get('results', [])
+            if self.projects_data:
                 # Prepare data for table
                 table_data = []
-                for project in projects_data:
+                for project in self.projects_data:
                     row = [
                         project.get('id'),
                         project.get('name'),
@@ -303,11 +303,11 @@ class syntheticus_client:
         }
 
         response = requests.request("GET", url, headers=headers, data=payload, files=files)
-        data = json.loads(response.text)
+        self.data = json.loads(response.text)
 
         # Prepare data for table
-        table_data = []
-        for result in data.get('results', []):
+        self.table_data = []
+        for result in self.data.get('results', []):
             for outer_dataset in result.get('datasets', []):
                 for dataset in outer_dataset.get('datasets', []):
                     row = [
@@ -320,7 +320,7 @@ class syntheticus_client:
                         len(dataset.get('dataset_metadata', {}).get('column_types', {})),
                         'Selected' if self.dataset_id == result.get('id') else 'Not Selected',
                     ]
-                    table_data.append(row)
+                    self.table_data.append(row)
 
                     # Add the dataset to the lookup dictionary using its unique ID as the key
                     self.datasets[result.get('id')] = dataset.get('dataset_name')
@@ -329,7 +329,7 @@ class syntheticus_client:
         headers = ['Dataset Name', 'Dataset ID', 'Project ID', 'Data Type', 'Size', 'Number of Rows', 'Number of Columns', 'Status']
 
         # Print table
-        print(tabulate(table_data, headers=headers, tablefmt='pretty'))
+        print(tabulate(self.table_data, headers=headers, tablefmt='pretty'))
 
     def select_dataset(self, dataset_id):
         if dataset_id in self.datasets:
@@ -454,11 +454,11 @@ class syntheticus_client:
         url = f"{self.host_airflow}/api/v1/dags"
         response = self.session.get(url)
         if response.status_code == 200:
-            models = response.json().get('dags', [])
-            if models:
+            self.models = response.json().get('dags', [])
+            if self.models:
                 print("Available Models:")
                 table_data = []
-                for item in models:
+                for item in self.models:
                     dag_id = item.get('dag_id')
                     description = item.get('description')
                     table_data.append([dag_id, description])

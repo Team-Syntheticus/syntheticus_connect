@@ -56,53 +56,53 @@ class syntheticus_client:
         self.config_file_path = None # path to the config file
         self.commit = None # commit id
         
-    def register(self, username, email, password):
-        """
-        Register a new user.
+    # def register(self, username, email, password):
+    #     """
+    #     Register a new user.
 
-        Args:
-            username (str): The username for the new user.
-            email (str): The email address for the new user.
-            password (str): The password for the new user.
+    #     Args:
+    #         username (str): The username for the new user.
+    #         email (str): The email address for the new user.
+    #         password (str): The password for the new user.
 
-        Returns:
-            dict: The response JSON containing the registration details, excluding the key.
-        """
-        url = f"{self.host}/dj-rest-auth/registration/"
-        body = {
-            "username": username,
-            "email": email,
-            "password1": password,
-            "password2": password
-        }
-        try:
-            response = requests.post(url, data=json.dumps(body), headers={'Content-Type': 'application/json'})
-            response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
+    #     Returns:
+    #         dict: The response JSON containing the registration details, excluding the key.
+    #     """
+    #     url = f"{self.host}/dj-rest-auth/registration/"
+    #     body = {
+    #         "username": username,
+    #         "email": email,
+    #         "password1": password,
+    #         "password2": password
+    #     }
+    #     try:
+    #         response = requests.post(url, data=json.dumps(body), headers={'Content-Type': 'application/json'})
+    #         response.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xx
             
-            # If the response status is 200, parse the JSON response
-            response_json = response.json()
+    #         # If the response status is 200, parse the JSON response
+    #         response_json = response.json()
 
-            # If you want to remove the key from the response before returning
-            if 'key' in response_json:
-                del response_json['key']
+    #         # If you want to remove the key from the response before returning
+    #         if 'key' in response_json:
+    #             del response_json['key']
 
-            # If the response is empty, print a success message
-            if not response_json:
-                print("Successful registration!")
+    #         # If the response is empty, print a success message
+    #         if not response_json:
+    #             print("Successful registration!")
 
-            return response_json
+    #         return response_json
 
-        except requests.exceptions.HTTPError as errh:
-            # If a HTTPError is caught, print the response body for more information
-            print(f"Http Error: {errh}. Response body: {errh.response.text}")
-        except requests.exceptions.ConnectionError as errc:
-            print(f"Error Connecting: {errc}. Response body: {errc.response.text}")
-        except requests.exceptions.Timeout as errt:
-            print(f"Timeout Error: {errt}. Response body: {errt.response.text}")
-        except requests.exceptions.RequestException as err:
-            print(f"An error occurred: {err}. Response body: {err.response.text}")
-        except ValueError:
-            print("Invalid response received. Unable to parse JSON.")
+    #     except requests.exceptions.HTTPError as errh:
+    #         # If a HTTPError is caught, print the response body for more information
+    #         print(f"Http Error: {errh}. Response body: {errh.response.text}")
+    #     except requests.exceptions.ConnectionError as errc:
+    #         print(f"Error Connecting: {errc}. Response body: {errc.response.text}")
+    #     except requests.exceptions.Timeout as errt:
+    #         print(f"Timeout Error: {errt}. Response body: {errt.response.text}")
+    #     except requests.exceptions.RequestException as err:
+    #         print(f"An error occurred: {err}. Response body: {err.response.text}")
+    #     except ValueError:
+    #         print("Invalid response received. Unable to parse JSON.")
 
 
 
@@ -489,18 +489,29 @@ class syntheticus_client:
             logging.info(f"Model run ID: {dag_run_id}, state: {state}")
 
     def fit(self):
+        """
+        Triggers the fit process for the selected model.
+
+        Raises:
+            Exception: If an unexpected error occurs during the fit process.
+
+        Returns:
+            str: A message indicating the success or failure of the fit process.
+
+        """
         url = f"{self.host}/api/projects/{self.project_id}/run-dag/"
 
         payload = json.dumps({
-        "dag_name": f"{self.model_id}",
+            "dag_name": f"{self.model_id}",
         })
         headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'Token {self.token}'
+            'Content-Type': 'application/json',
+            'Authorization': f'Token {self.token}'
         }
 
         try:
             response = requests.request("POST", url, headers=headers, data=payload)
+            response.raise_for_status()
 
             # Join the response strings into one string
             response_string = ''.join(json.loads(response.text))
@@ -515,43 +526,46 @@ class syntheticus_client:
             print(f"Execution Date: {response_dict['execution_date']}")
             print(f"State: {response_dict['state']}")
             print('')
-            print('The synthetization process has been triggered successfully.')
-            
-        except requests.exceptions.HTTPError as errh:
-            logging.error(f"Http Error: {errh}")
-        except requests.exceptions.ConnectionError as errc:
-            logging.error(f"Error Connecting: {errc}")
-        except requests.exceptions.Timeout as errt:
-            logging.error(f"Timeout Error: {errt}")
+            print('The fit process has been triggered successfully.')
+            return 'The fit process has been triggered successfully.'
+
         except requests.exceptions.RequestException as err:
-            logging.error(f"Something went wrong: {err}")
+            logging.error(f"An error occurred during the fit process: {err}")
+            return "An error occurred during the fit process."
         finally:
             self.project_id = None
             self.dataset_id = None
             self.model_id = None
-            self.sconfig_file_path = None
-
-        
-     
+            self.config_file_path = None
+    
     #### the following will be deprecated in future versions. Use django API instead.    
     def synthetize(self):
-        """This method triggers the synthetization process"""
+        """
+        Triggers the data synthesis process.
 
-        if not self.project_id or not self.model_id:
-            raise ValueError("Please specify project_id and model_id.")
+        Raises:
+            ValueError: If project_id or model_id is not specified.
+            Exception: For any other unexpected errors.
 
-        now = datetime.now()
-        time = now.strftime("%Y-%m-%d %H:%M:%S")
+        Returns:
+            str: Success message if synthesis is triggered successfully.
+            str: Error message if synthesis trigger encounters an error.
 
-        run_id = self.project_id + '_' + time
-
-        url = f"{self.host_airflow}/api/v1/dags/{self.model_id}/dagRuns"
-        conf = {"main_data_dir": self.main_data_dir, "project_name": self.project_id}
-        data = {"dag_run_id": run_id, "conf": conf}
-
+        """
         try:
-            # Print information before triggering synthetization
-            print(f"Synthetization Information:")
+            if not self.project_id or not self.model_id:
+                raise ValueError("Please specify project_id and model_id.")
+
+            now = datetime.now()
+            time = now.strftime("%Y-%m-%d %H:%M:%S")
+            run_id = self.project_id + '_' + time
+
+            url = f"{self.host_airflow}/api/v1/dags/{self.model_id}/dagRuns"
+            conf = {"main_data_dir": self.main_data_dir, "project_name": self.project_id}
+            data = {"dag_run_id": run_id, "conf": conf}
+
+            # Print information before triggering synthesis
+            print(f"Synthesis Information:")
             print(f"Project: {self.project_name} (ID: {self.project_id})")
             print(f"Dataset: {self.dataset_name} (ID: {self.dataset_id})")
             print(f"Model: {self.model_id}")
@@ -559,108 +573,135 @@ class syntheticus_client:
 
             response = self.session.post(url, json=data)
             response.raise_for_status()
-            logging.info("Synthetization triggered successfully!")
-            return 'Synthetization triggered successfully!'
 
-        except requests.exceptions.HTTPError as errh:
-            logging.error(f"Http Error: {errh}")
-        except requests.exceptions.ConnectionError as errc:
-            logging.error(f"Error Connecting: {errc}")
-        except requests.exceptions.Timeout as errt:
-            logging.error(f"Timeout Error: {errt}")
+            if response.status_code // 100 == 2:  # Check if status code is in the 2xx range
+                logging.info("Synthesis triggered successfully!")
+                return 'Synthesis triggered successfully!'
+            else:
+                logging.error(f"Synthesis trigger returned HTTP {response.status_code}: {response.text}")
+                return f"Synthesis trigger failed with HTTP {response.status_code}."
+
         except requests.exceptions.RequestException as err:
-            logging.error(f"Something went wrong: {err}")
+            logging.error(f"An error occurred during synthesis: {err}")
+            return "An error occurred during synthesis."
         finally:
             self.project_id = None
             self.dataset_id = None
             self.model_id = None
-            self.sconfig_file_path = None
+            self.config_file_path = None
 
     def list_commits(self):
-        if self.project_id is None:
-            print('Please select a project_id first.')
-        else:
-            url = f"{self.host}/api/projects/{self.project_id}/commit-logs/"
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': f'Token {self.token}'
-            }
+        """
+        Lists commits for the selected project.
 
-            response = requests.get(url, headers=headers)
-            response.raise_for_status() 
+        Returns:
+            None
 
-            commits = response.json()
-            print(f'List of experiment in the project selected: {self.project_id}.')
-            print(tabulate(commits, headers="keys", tablefmt="pretty"))
-        
+        Raises:
+            requests.exceptions.RequestException: If an error occurs during the API request.
+
+        """
+        try:
+            if self.project_id is None:
+                print('Please select a project_id first.')
+            else:
+                url = f"{self.host}/api/projects/{self.project_id}/commit-logs/"
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Token {self.token}'
+                }
+
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+
+                self.commits = response.json()
+                print(f'List of experiments in the selected project ({self.project_id}):')
+                print(tabulate(self.commits, headers="keys", tablefmt="pretty"))
+
+        except requests.exceptions.RequestException as err:
+            logging.error(f"An error occurred while listing commits: {err}")
+
     def select_commit(self, commit_id):
-            if self.project_id is not None:
-                self.commit = commit_id
-                print(f"Commit {commit_id} selected in project {self.project_id}.")
-            else: 
-                print("Please select a project_id first using the select_project() method.")
-                
-    # def download_data(self, data_to_download):
-    #     if self.project_id and self.commit is not None:
-    #         url = f"{self.host}/api/projects/{self.project_id}/download-airflow-data/"
-    #         payload = json.dumps({
-    #         "commit": f"{self.commit}",
-    #         "data_to_download": f"{data_to_download}"
-    #         })
-    #         headers = {
-    #         'Content-Type': 'application/json',
-    #         'Authorization': f'Token {self.token}'
-    #         }
+        """
+        Selects a commit for the current project.
 
-    #         response = requests.request("POST", url, headers=headers, data=payload)
+        Args:
+            commit_id (str): The ID of the commit to select.
 
-    #         # # Load the pickled DataFrame from the response
-    #         # df = pickle.loads(response.content)
+        Returns:
+            None
 
-    #         # # Define the filename
-    #         # filename = f"{self.dataset_name}_synth.csv"
-
-    #         # # Save DataFrame to CSV file
-    #         # df.to_csv(filename, index=False)
-    #                 # Save the response content to a file
-    #         #with open('response.pkl', 'wb') as f:
-    #         #    f.write(response.content)
-
-    #     else:
-    #         print("Please select a project_id and a commit first.")
+        """
+        if self.project_id is not None:
+            self.commit = commit_id
+            print(f"Commit {commit_id} selected in project {self.project_id}.")
+        else:
+            print("Please select a project_id first using the select_project() method.")
 
     def download_data(self, data_to_download):
-        if self.project_id and self.commit is not None:
-            url = f"{self.host}/api/projects/{self.project_id}/download-airflow-data/"
-            payload = json.dumps({
-                "commit": f"{self.commit}",
-                "data_to_download": f"{data_to_download}"
-            })
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': f'Token {self.token}'
-            }
+        """
+        Downloads data from a specified source based on the given parameters.
 
-            response = requests.request("POST", url, headers=headers, data=payload)
-            
-            if data_to_download == 'data_synth' or data_to_download == 'data_real':
-                # Save the response content to a zip file
-                with open(f"{self.dataset_name}_synth.zip", 'wb') as f:
-                    f.write(response.content)
-                    
-                # Open the zip file
-                with zipfile.ZipFile(io.BytesIO(response.content), 'r') as z:
-                    # Loop through each file
-                    for filename in z.namelist():
-                        # If the file is a .pkl file
-                        if filename.endswith('.pkl'):
-                            # Load the DataFrame from the pickled data
-                            df = pd.read_pickle(z.open(filename))
-                            # Save the DataFrame to a csv file
-                            df.to_csv(f"{self.dataset_name}_synth.csv", index=False)
-            elif data_to_download == 'report':
-                with open(f"{self.project_name}_reports.pdf", 'wb') as f:
-                    f.write(response.content)
+        Args:
+            data_to_download (str): The type of data to download. Options are 'data_synth', 'models', 'report', 'config', 'metadata'.
 
-        else:
-            print("Please select a project_id and a commit first.")
+        Returns:
+            None
+
+        Raises:
+            ConnectionError: If there's an issue with the HTTP request.
+            JSONDecodeError: If the response from the server is not a valid JSON format.
+            IOError: If there are issues with file operations.
+            ValueError: If the parameter values are incorrect or unexpected.
+            Exception: For any other unexpected errors.
+
+        """
+        try:
+            if self.project_id and self.commit is not None:
+                # Construct the URL for the API endpoint
+                url = f"{self.host}/api/projects/{self.project_id}/download-airflow-data/"
+                
+                # Prepare payload for the POST request
+                payload = json.dumps({
+                    "commit": f"{self.commit}",
+                    "data_to_download": f"{data_to_download}"
+                })
+                
+                # Define headers for the POST request
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Token {self.token}'
+                }
+
+                # Make the POST request
+                response = requests.request("POST", url, headers=headers, data=payload)
+                
+                # Process different types of downloaded data
+                if data_to_download == 'data_synth' or data_to_download == 'data_real':
+                    # Save the response content to a zip file
+                    with open(f"{self.dataset_name}_synth.zip", 'wb') as f:
+                        f.write(response.content)
+                        
+                    # Extract and process files from the downloaded zip
+                    with zipfile.ZipFile(io.BytesIO(response.content), 'r') as z:
+                        for filename in z.namelist():
+                            if filename.endswith('.pkl'):
+                                # Load the DataFrame from the pickled data
+                                df = pd.read_pickle(z.open(filename))
+                                # Save the DataFrame to a csv file
+                                df.to_csv(f"{self.dataset_name}_synth.csv", index=False)
+                elif data_to_download == 'report':
+                    with open(f"{self.project_name}_reports.pdf", 'wb') as f:
+                        f.write(response.content)
+            else:
+                print("Please select a project_id and a commit first.")
+        except (ConnectionError, requests.RequestException) as e:
+            print(f"An error occurred while making the request: {e}")
+        except json.JSONDecodeError as e:
+            print(f"An error occurred while decoding the JSON response: {e}")
+        except IOError as e:
+            print(f"An error occurred during file operations: {e}")
+        except ValueError as e:
+            print(f"An error occurred due to invalid parameter values: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")

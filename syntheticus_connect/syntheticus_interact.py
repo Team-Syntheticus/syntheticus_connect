@@ -31,18 +31,41 @@ class syntheticus_interface(syntheticus_client):
         display(self.login_username_input, self.login_password_input, self.login_button, self.login_output)
     
     def project_select(self):
+        """
+        Create a project selection dropdown widget and display selected project information.
+
+        This method fetches project data, creates a dropdown widget to select a project,
+        and displays information about the selected project.
+
+        Note:
+        If there's only one project available, the dropdown will still be enabled for selection.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        # Fetch project data
         with self.suppress_output():
             self.get_projects()
 
+        # Prepare project strings for the dropdown
         project_strings = []
         for project in self.projects_data:
             project_string = f"ID: {project['id']}, Name: {project['name']}"
             project_strings.append(project_string)
 
+        # Set the default value for the dropdown
+        if project_strings:
+            default_value = project_strings[0]
+        else:
+            default_value = "No projects available"
+
         # Create a Dropdown widget with adjusted width using CSS styling
         self.project_dropdown_widget = widgets.Dropdown(
             options=project_strings,
-            value=project_strings[0],  # Set the default value to the first project string
+            value=default_value,
             description='Select:',
             disabled=False,
             layout=Layout(width='auto')  # Adjust width automatically
@@ -51,8 +74,19 @@ class syntheticus_interface(syntheticus_client):
         # Output area to display selected project info
         self.project_output_area = Output()
 
-        # Define a function to update the variables based on the selected dropdown value
         def update_variables(change):
+            """
+            Update variables based on the selected dropdown value.
+
+            This function is called whenever the dropdown value changes.
+            It updates the selected project's information and displays it.
+
+            Args:
+                change (dict): A dictionary containing information about the change.
+
+            Returns:
+                None
+            """
             selected_value = change['new']
             selected_index = project_strings.index(selected_value)
             selected_project = self.projects_data[selected_index]
@@ -67,6 +101,10 @@ class syntheticus_interface(syntheticus_client):
 
         # Attach the update function to the dropdown's 'value' property changes
         self.project_dropdown_widget.observe(update_variables, names='value')
+
+        # Check if there's only one project in the dropdown
+        if len(project_strings) == 1:
+            update_variables({'new': self.project_dropdown_widget.value})
 
         # Display the Dropdown widget and the output area
         display(VBox([self.project_dropdown_widget, self.project_output_area]))
@@ -173,3 +211,77 @@ class syntheticus_interface(syntheticus_client):
         self.model_dropdown_widget.observe(update_variables, names='value')
 
         display(VBox([self.model_dropdown_widget, self.model_output_area]))
+        
+    def commit_select(self):
+        """
+        Displays a dropdown widget for commit selection.
+
+        Returns:
+            None
+        """
+        
+        with self.suppress_output():
+            self.list_commits()  # Fetch commits data
+
+        commit_strings = [f"ID: {entry['commit']}, Message: {entry['subject']}" for entry in self.commits]
+        commit_strings.insert(0, "Select a commit")
+
+        self.commit_dropdown_widget = widgets.Dropdown(
+            options=commit_strings,
+            value=commit_strings[0],
+            description='Select:',
+            disabled=False,
+            layout=Layout(width='auto')
+        )
+
+        self.commit_output_area = Output()
+
+        def update_variables(change):
+            selected_value = change['new']
+            selected_index = commit_strings.index(selected_value)
+            selected_index = selected_index - 1
+
+            if selected_index >= 0:
+                selected_commit = self.commits[selected_index]
+                self.commit = selected_commit['commit']
+
+                with self.commit_output_area:
+                    self.commit_output_area.clear_output()
+                    print(f"Selected commit ID: {self.commit}")
+                    print(f"Selected commit message: {selected_commit['subject']}")
+            else:
+                with self.commit_output_area:
+                    self.commit_output_area.clear_output()
+
+        self.commit_dropdown_widget.observe(update_variables, names='value')
+
+        display(VBox([self.commit_dropdown_widget, self.commit_output_area]))
+        
+    def download(self):
+        """
+        Builds a widget for downloading different types of data.
+        """
+        data_download_checkboxes = widgets.RadioButtons(
+            options=['data_synth', 'models', 'report', 'config', 'metadata'],
+            description='Data to Download:',
+            disabled=False,
+        )
+
+        download_button = widgets.Button(description='Download')
+
+        output_area = Output()
+
+        def on_download_button_click(_):
+            selected_data = data_download_checkboxes.value
+            with output_area:
+                output_area.clear_output()
+                try:
+                    self.download_data(selected_data)
+                    print("Download successful!")  # Success message
+                except Exception as e:
+                    print(f"An error occurred: {e}")  # Error message
+
+        download_button.on_click(on_download_button_click)
+
+        download_widget = VBox([data_download_checkboxes, download_button, output_area])
+        return download_widget

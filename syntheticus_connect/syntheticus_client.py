@@ -38,8 +38,8 @@ class syntheticus_client:
             host (str): The base URL of the API.
         """
 
-        self.host = host + ':8000' # host syntheticus nav
-        self.host_airflow = host + ':8080' # host airflow
+        self.host = host # + ':8000' # host syntheticus nav
+        self.host_airflow = host # + ':8080' # host airflow
         self.token = None # user token assigned at login
         self.user = None # username
         self.password = None # passwod

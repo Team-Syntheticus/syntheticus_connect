@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='syntheticus_connect',
-    version='0.1.7',
+    version='0.1.8',
     description='A Python client for Syntheticus',
     author='Valerio Mazzone',
     author_email='valerio.mazzone@gmail.com',

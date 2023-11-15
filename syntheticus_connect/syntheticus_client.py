@@ -39,8 +39,9 @@ class syntheticus_client:
         """
 
         self.django = "https://django."
+        self.airflow = "https://airflow-webserver."
         self.host = self.django + host 
-        self.host_airflow = host + ':8080' # host airflow
+        self.host_airflow = self.airflow + host
         self.token = None # user token assigned at login
         self.user = None # username
         self.password = None # passwod

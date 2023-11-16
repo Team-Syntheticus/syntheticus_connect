@@ -30,18 +30,19 @@ class syntheticus_client:
             'Content-Type': 'application/json'
                 }
 
-    def __init__(self, host):
+    def __init__(self, host_django, host_airflow):
         """
         Initialize the SyntheticusConnect instance.
 
         Args:
             host (str): The base URL of the API.
         """
-
-        self.django = "https://django."
-        self.airflow = "https://airflow-webserver."
-        self.host = self.django + host 
-        self.host_airflow = self.airflow + host
+       
+        if host_django is None or host_airflow is None:
+            raise ValueError("Both host_django and host_airflow must be provided")
+        
+        self.host = host_django
+        self.host_airflow = host_airflow
         self.token = None # user token assigned at login
         self.user = None # username
         self.password = None # passwod
@@ -105,8 +106,6 @@ class syntheticus_client:
     #         print(f"An error occurred: {err}. Response body: {err.response.text}")
     #     except ValueError:
     #         print("Invalid response received. Unable to parse JSON.")
-
-
 
     def login(self, username, password):
         """
@@ -357,7 +356,7 @@ class syntheticus_client:
         if response.status_code == 204:
             return "Project deleted successfully."
         else:
-            return "Error deleting project."
+            return f"Error deleting project {response.status_code}"
 
     @staticmethod
     def get_mime_type(file_name):
@@ -388,7 +387,7 @@ class syntheticus_client:
         if response.status_code == 200:
             print('Files uploaded successfully.')
         else:
-            print(f'Error occurred while uploading files: {response.text}')
+            print(f'Error occurred while uploading files: STATUS CODE {response.status_code}')
         return
 
     def upload_conf(self):
@@ -430,7 +429,7 @@ class syntheticus_client:
             print(f"If you want to modify the config file, open the file with {self.project_name}.yaml and customize it.")
             print("Once finished, save and upload again using the update_conf() method.")
         else:
-            print(f"Error occurred while uploading the configuration file: {response.text}")
+            print(f"Error occurred while uploading the configuration file: STATUS CODE {response.status_code}")
             
     def update_conf(self):
         url_upload_conf = f'{self.host}/api/projects/{self.project_id}/update-conf-file/'
@@ -449,7 +448,7 @@ class syntheticus_client:
         if response.status_code == 200:
             print(f"The configuration file '{self.config_file_path}' has been successfully re-uploaded.")
         else:
-            print(f"Error occurred while re-uploading the configuration file: {response.text}")
+            print(f"Error occurred while re-uploading the configuration file: STATUS CODE {response.status_code}")
 
     def get_models(self):
         """This method lists all the available models"""

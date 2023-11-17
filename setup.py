@@ -20,6 +20,7 @@ setup(
         'tabulate',
         'ipywidgets',
         'ipython'
+        'tornado'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

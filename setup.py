@@ -19,7 +19,7 @@ setup(
         'pandas',
         'tabulate',
         'ipywidgets',
-        'ipython'
+        'ipython',
         'tornado'
     ],
     classifiers=[

@@ -346,8 +346,8 @@ class syntheticus_client:
         }.get(extension, 'application/octet-stream')
 
     def upload_data(self, dataset_name, folder_path, file_names):
-        # Check if project_id exists in the lookup dictionary
-        if self.project_id not in self.projects:
+        # Check if the current project_id exists in projects_data
+        if not any(proj for proj in self.projects_data if proj['id'] == self.project_id):
             print("Please select a valid project ID.")
             return
 

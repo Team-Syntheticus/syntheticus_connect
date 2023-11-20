@@ -32,7 +32,7 @@ class syntheticus_interface(syntheticus_client):
     
     def project_select(self):
         """
-        Create or update a project selection dropdown widget.
+        Create a project selection dropdown widget.
         """
         # Fetch project data
         self.get_projects()
@@ -42,10 +42,15 @@ class syntheticus_interface(syntheticus_client):
 
         # Prepare project strings for the dropdown
         project_strings = [f"ID: {project['id']}, Name: {project['name']}"
-                        for project in unique_projects] or ["No projects available"]
+                           for project in unique_projects] or ["No projects available"]
 
-        # If the dropdown widget does not exist, create it; otherwise, update it
-        if not hasattr(self, 'project_dropdown_widget'):
+        # Check if the widget already exists
+        if hasattr(self, 'project_dropdown_widget'):
+            # Update the options of the existing dropdown widget
+            self.project_dropdown_widget.options = project_strings
+            self.project_dropdown_widget.value = project_strings[0] if project_strings else None
+        else:
+            # Create the Dropdown widget
             self.project_dropdown_widget = widgets.Dropdown(
                 options=project_strings,
                 value=project_strings[0] if project_strings else None,
@@ -53,19 +58,13 @@ class syntheticus_interface(syntheticus_client):
                 disabled=not bool(project_strings),
                 layout=Layout(width='auto')
             )
-        else:
-            # Update the options and value of the existing dropdown
-            self.project_dropdown_widget.options = project_strings
-            self.project_dropdown_widget.value = project_strings[0] if project_strings else None
+            # Display the widget for the first time
+            display(self.project_dropdown_widget)
 
-        # If the output area does not exist, create it; otherwise, clear it
+        # Check if the output area exists
         if not hasattr(self, 'project_output_area'):
             self.project_output_area = Output()
-        else:
-            self.project_output_area.clear_output()
-
-        # Display the widgets
-        display(self.project_dropdown_widget, self.project_output_area)
+            display(self.project_output_area)
 
 
         def update_variables(change):

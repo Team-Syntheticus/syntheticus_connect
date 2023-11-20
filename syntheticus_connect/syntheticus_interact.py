@@ -4,8 +4,8 @@ from syntheticus_connect import syntheticus_client
 from contextlib import contextmanager
 
 class syntheticus_interface(syntheticus_client):
-    def __init__(self, host):
-        super().__init__(host)  # Call the constructor of syntheticus_client
+    def __init__(self, host_django=None, host_airflow=None):
+        super().__init__(host_django, host_airflow)
     
     @contextmanager
     def suppress_output(self):
@@ -32,47 +32,41 @@ class syntheticus_interface(syntheticus_client):
     
     def project_select(self):
         """
-        Create a project selection dropdown widget and display selected project information.
-
-        This method fetches project data, creates a dropdown widget to select a project,
-        and displays information about the selected project.
-
-        Note:
-        If there's only one project available, the dropdown will still be enabled for selection.
-
-        Args:
-            None
-
-        Returns:
-            None
+        Create or update a project selection dropdown widget.
         """
         # Fetch project data
-        with self.suppress_output():
-            self.get_projects()
+        self.get_projects()
+
+        # Remove duplicate projects if any (based on project ID)
+        unique_projects = {proj['id']: proj for proj in self.projects_data}.values()
 
         # Prepare project strings for the dropdown
-        project_strings = []
-        for project in self.projects_data:
-            project_string = f"ID: {project['id']}, Name: {project['name']}"
-            project_strings.append(project_string)
+        project_strings = [f"ID: {project['id']}, Name: {project['name']}"
+                        for project in unique_projects] or ["No projects available"]
 
-        # Set the default value for the dropdown
-        if project_strings:
-            default_value = project_strings[0]
+        # If the dropdown widget does not exist, create it; otherwise, update it
+        if not hasattr(self, 'project_dropdown_widget'):
+            self.project_dropdown_widget = widgets.Dropdown(
+                options=project_strings,
+                value=project_strings[0] if project_strings else None,
+                description='Select:',
+                disabled=not bool(project_strings),
+                layout=Layout(width='auto')
+            )
         else:
-            default_value = "No projects available"
+            # Update the options and value of the existing dropdown
+            self.project_dropdown_widget.options = project_strings
+            self.project_dropdown_widget.value = project_strings[0] if project_strings else None
 
-        # Create a Dropdown widget with adjusted width using CSS styling
-        self.project_dropdown_widget = widgets.Dropdown(
-            options=project_strings,
-            value=default_value,
-            description='Select:',
-            disabled=False,
-            layout=Layout(width='auto')  # Adjust width automatically
-        )
+        # If the output area does not exist, create it; otherwise, clear it
+        if not hasattr(self, 'project_output_area'):
+            self.project_output_area = Output()
+        else:
+            self.project_output_area.clear_output()
 
-        # Output area to display selected project info
-        self.project_output_area = Output()
+        # Display the widgets
+        display(self.project_dropdown_widget, self.project_output_area)
+
 
         def update_variables(change):
             """

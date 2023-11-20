@@ -14,7 +14,8 @@ import pandas as pd
 import zipfile
 import io
 
-class syntheticus_client:
+
+class syntheticus_client:    
     """
     A class for interacting with the Syntheticus API.
     """
@@ -28,24 +29,25 @@ class syntheticus_client:
         return {
             'Authorization': f'Token {self.token}',
             'Content-Type': 'application/json'
-                }
-
-    def __init__(self, host_django, host_airflow):
+        }
+    def __init__(self, host_django=None, host_airflow=None):
         """
-        Initialize the SyntheticusConnect instance.
+        Initialize the syntheticus_client instance.
 
         Args:
-            host (str): The base URL of the API.
+            host_django (str, optional): The base URL of the Django API.
+            host_airflow (str, optional): The base URL of the Airflow API.
         """
-       
-        if host_django is None or host_airflow is None:
-            raise ValueError("Both host_django and host_airflow must be provided")
+        self.host_django = host_django or os.getenv('DJANGO_URL')
+        self.host_airflow = host_airflow or os.getenv('JUPYTERHUB_URL')
+
+        if not self.host_django or not self.host_airflow:
+            raise ValueError("Both DJANGO_URL and JUPYTERHUB_URL must be provided, either as environment variables or directly as arguments")
         
-        self.host = host_django
-        self.host_airflow = host_airflow
         self.token = None # user token assigned at login
         self.user = None # username
         self.password = None # passwod
+        self.projects_data = []
         self.projects = {} # dictionary with the list of projects
         self.datasets = {} # dictionary with the list of datasets for a project
         self.session = requests.Session()
@@ -122,7 +124,7 @@ class syntheticus_client:
         # reinitailzias variables
         self.user = username
         self.password = password
-        url = f"{self.host}/dj-rest-auth/login/"
+        url = f"{self.host_django}/dj-rest-auth/login/"
         body = {
             "username": username,
             "password": password
@@ -141,7 +143,7 @@ class syntheticus_client:
         Returns:
             str: The response text from the logout request.
         """
-        url = f"{self.host}/dj-rest-auth/logout/"
+        url = f"{self.host_django}/dj-rest-auth/logout/"
         response = requests.post(url, headers=self._authorized_headers())
         return response.text
 
@@ -155,7 +157,7 @@ class syntheticus_client:
         Returns:
             dict: The response JSON containing the password change details.
         """
-        url = f"{self.host}/dj-rest-auth/password/change/"
+        url = f"{self.host_django}/dj-rest-auth/password/change/"
         body = {
             "new_password1": new_password,
             "new_password2": new_password
@@ -173,7 +175,7 @@ class syntheticus_client:
         Returns:
             str: The response text containing the user details.
         """
-        url = f"{self.host}/api/users/{user_id}/"
+        url = f"{self.host_django}/api/users/{user_id}/"
         response = requests.get(url, headers=self._authorized_headers())
         return response.text
 
@@ -184,7 +186,7 @@ class syntheticus_client:
         Returns:
             None
         """
-        url = f"{self.host}/api/users/me/"
+        url = f"{self.host_django}/api/users/me/"
         response = requests.get(url, headers=self._authorized_headers())
         if response.status_code == 200:
             user_data = response.json()
@@ -210,7 +212,7 @@ class syntheticus_client:
         Returns:
             dict: The response JSON containing the project details.
         """
-        url = f"{self.host}/api/projects/"
+        url = f"{self.host_django}/api/projects/"
         body = {
             "name": name
         }
@@ -234,36 +236,13 @@ class syntheticus_client:
 
     def get_projects(self):
         """
-        Get the list of projects.
-
-        Returns:
-            None
+        Get the list of projects and update self.projects_data.
         """
-        url = f"{self.host}/api/projects/"
+        url = f"{self.host_django}/api/projects/"
         response = requests.get(url, headers=self._authorized_headers())
         if response.status_code == 200:
             self.projects_data = response.json().get('results', [])
-            if self.projects_data:
-                # Prepare data for table
-                table_data = []
-                for project in self.projects_data:
-                    row = [
-                        project.get('id'),
-                        project.get('name'),
-                        project.get('created_at'),
-                        "Selected" if project.get('id') == self.project_id else "Not Selected"
-                    ]
-                    table_data.append(row)
-                    # Update the project lookup dictionary
-                    self.projects[project.get('id')] = project.get('name')
-
-                # Define table headers
-                headers = ['Project ID', 'Project Name', 'Created At', 'Status']
-
-                # Print table
-                print("Projects:")
-                print(tabulate(table_data, headers=headers, tablefmt='pretty'))
-            else:
+            if not self.projects_data:
                 print("No projects found.")
         else:
             print("Error fetching projects.")
@@ -296,7 +275,7 @@ class syntheticus_client:
         if self.project_id not in self.projects:
             print("Please select a valid project ID.")
             return
-        url = f"{self.host}/api/projects/{self.project_id}/list-dataset-folders/"
+        url = f"{self.host_django}/api/projects/{self.project_id}/list-dataset-folders/"
         payload = {}
         files = {}
         headers = {
@@ -351,7 +330,7 @@ class syntheticus_client:
         Returns:
             str: The status message indicating the success or failure of the project deletion.
         """
-        url = f"{self.host}/api/projects/{project_id}/"
+        url = f"{self.host_django}/api/projects/{project_id}/"
         response = requests.delete(url, headers=self._authorized_headers())
         if response.status_code == 204:
             return "Project deleted successfully."
@@ -372,7 +351,7 @@ class syntheticus_client:
             print("Please select a valid project ID.")
             return
 
-        url = f"{self.host}/api/projects/{self.project_id}/upload-data/"
+        url = f"{self.host_django}/api/projects/{self.project_id}/upload-data/"
         payload = {'dataset_folder_name': dataset_name}
         files = [
             ('files', (file_name, open(f'{folder_path}/{file_name}','rb'), self.get_mime_type(file_name))) for file_name in file_names
@@ -391,7 +370,7 @@ class syntheticus_client:
         return
 
     def upload_conf(self):
-        url_upload_conf = f'{self.host}/api/projects/{self.project_id}/update-conf-file/'
+        url_upload_conf = f'{self.host_django}/api/projects/{self.project_id}/update-conf-file/'
 
         # Prepare the configuration data
         config_data = {
@@ -432,7 +411,7 @@ class syntheticus_client:
             print(f"Error occurred while uploading the configuration file: STATUS CODE {response.status_code}")
             
     def update_conf(self):
-        url_upload_conf = f'{self.host}/api/projects/{self.project_id}/update-conf-file/'
+        url_upload_conf = f'{self.host_django}/api/projects/{self.project_id}/update-conf-file/'
 
         # Check if the configuration file exists
         self.config_file_path = f"{self.project_name}.yaml"
@@ -500,7 +479,7 @@ class syntheticus_client:
             str: A message indicating the success or failure of the fit process.
 
         """
-        url = f"{self.host}/api/projects/{self.project_id}/run-dag/"
+        url = f"{self.host_django}/api/projects/{self.project_id}/run-dag/"
 
         payload = json.dumps({
             "dag_name": f"{self.model_id}",
@@ -606,7 +585,7 @@ class syntheticus_client:
             if self.project_id is None:
                 print('Please select a project_id first.')
             else:
-                url = f"{self.host}/api/projects/{self.project_id}/commit-logs/"
+                url = f"{self.host_django}/api/projects/{self.project_id}/commit-logs/"
                 headers = {
                     'Content-Type': 'application/json',
                     'Authorization': f'Token {self.token}'
@@ -660,7 +639,7 @@ class syntheticus_client:
         try:
             if self.project_id and self.commit is not None:
                 # Construct the URL for the API endpoint
-                url = f"{self.host}/api/projects/{self.project_id}/download-airflow-data/"
+                url = f"{self.host_django}/api/projects/{self.project_id}/download-airflow-data/"
                 
                 # Prepare payload for the POST request
                 payload = json.dumps({

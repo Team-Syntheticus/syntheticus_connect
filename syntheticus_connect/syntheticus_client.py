@@ -48,6 +48,7 @@ class syntheticus_client:
         self.user = None # username
         self.password = None # passwod
         self.projects_data = []
+        self.table_data = []  # Initialize as an empty list
         self.projects = {} # dictionary with the list of projects
         self.datasets = {} # dictionary with the list of datasets for a project
         self.session = requests.Session()
@@ -247,13 +248,14 @@ class syntheticus_client:
         else:
             print("Error fetching projects.")
     
-    def select_project(self, project_id):
-        if project_id in self.projects:
-            self.project_id = project_id
-            self.project_name = self.projects[project_id]
-            print(f"Project selected: {project_id} with name {self.projects[project_id]}")
-        else:
-            print(f"Project with ID {project_id} not found.")
+    #TO BE FIX
+    # def select_project(self, project_id):
+    #     if project_id in self.projects:
+    #         self.project_id = project_id
+    #         self.project_name = self.projects[project_id]
+    #         print(f"Project selected: {project_id} with name {self.projects[project_id]}")
+    #     else:
+    #         print(f"Project with ID {project_id} not found.")
     
     def wrap_text(text, width):
         wrapped_lines = textwrap.wrap(text, width=width)
@@ -271,10 +273,11 @@ class syntheticus_client:
             dict: The response JSON containing the dataset folders.
         """
         
-        # Check if project_id exists in the lookup dictionary
-        if self.project_id not in self.projects:
+        # Check if the current project_id exists in projects_data
+        if not any(proj for proj in self.projects_data if proj['id'] == self.project_id):
             print("Please select a valid project ID.")
             return
+        
         url = f"{self.host_django}/api/projects/{self.project_id}/list-dataset-folders/"
         payload = {}
         files = {}

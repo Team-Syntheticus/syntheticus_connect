@@ -65,7 +65,7 @@ class syntheticus_interface(syntheticus_client):
         if not hasattr(self, 'project_output_area'):
             self.project_output_area = Output()
             display(self.project_output_area)
-
+        # this need to selt self.project_name    
 
         def update_variables(change):
             """

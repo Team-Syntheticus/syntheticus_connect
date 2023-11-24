@@ -30,6 +30,43 @@ class syntheticus_client:
             'Authorization': f'Token {self.token}',
             'Content-Type': 'application/json'
         }
+        
+    def make_api_request(self, endpoint, method='GET', **request_args):
+        try:
+            url = f"{self.host_django}/{endpoint}"
+
+            # Set default headers if not provided in request_args
+            if 'headers' not in request_args:
+                request_args['headers'] = {'Content-Type': 'application/json'}
+
+            # Make the request based on the method
+            if method.upper() == 'GET':
+                response = requests.get(url, **request_args)
+            elif method.upper() == 'POST':
+                response = requests.post(url, **request_args)
+            elif method.upper() == 'DELETE':
+                response = requests.delete(url, **request_args)
+
+            response.raise_for_status()
+
+            # Return None for empty response content (especially for DELETE requests)
+            return response.json() if response.content else None
+
+        except requests.HTTPError as e:
+            logging.error(f"HTTP error occurred: {e.response.status_code} {e.response.reason} for URL {e.response.url}")
+            raise
+        except json.JSONDecodeError:
+            # Handle empty response body
+            if response.status_code in [204, 205]:
+                return None
+            else:
+                raise
+        except Exception as e:
+            logging.error(f"Unexpected error during API request: {str(e)}")
+            raise
+
+
+    
     def __init__(self, host_django=None, host_airflow=None):
         """
         Initialize the syntheticus_client instance.
@@ -39,28 +76,31 @@ class syntheticus_client:
             host_airflow (str, optional): The base URL of the Airflow API.
         """
         self.host_django = host_django or os.getenv('DJANGO_URL')
-        self.host_airflow = host_airflow or os.getenv('JUPYTERHUB_URL')
+        self.host_airflow = host_airflow or os.getenv('JUPYTER_URL')
 
-        if not self.host_django or not self.host_airflow:
-            raise ValueError("Both DJANGO_URL and JUPYTERHUB_URL must be provided, either as environment variables or directly as arguments")
+        if not self.host_django:
+            raise ValueError("Host DJANGO_URL must be provided, either as environment variables or directly as arguments")
         
         self.token = None # user token assigned at login
         self.user = None # username
         self.password = None # passwod
+        
         self.projects_data = []
         self.table_data = []  # Initialize as an empty list
         self.projects = {} # dictionary with the list of projects
         self.datasets = {} # dictionary with the list of datasets for a project
+        
         self.session = requests.Session()
         self.session.auth = ('airflow', 'airflow') # airflow credentials will be deprecated
         self.main_data_dir = './media/' # directory in syntheticus nav
+        
         self.project_id = None # selected project id
         self.project_name = None # selected project name
         self.model_id = None  # selected model id
         self.dataset_id = None # selected dataset id
         self.dataset_name = None # selected dataset name
         self.config_file_path = None # path to the config file
-        self.commit = None # commit id
+        self.commit_id = None # commit id
         
     # def register(self, username, email, password):
     #     """
@@ -111,98 +151,125 @@ class syntheticus_client:
     #         print("Invalid response received. Unable to parse JSON.")
 
     def login(self, username, password):
-        """
-        Log in to the API.
-
-        Args:
-            username (str): The username for authentication.
-            password (str): The password for authentication.
-
-        Returns:
-            str: The login status message.
-        """
-        
-        # reinitailzias variables
-        self.user = username
-        self.password = password
-        url = f"{self.host_django}/dj-rest-auth/login/"
-        body = {
-            "username": username,
-            "password": password
-        }
-        response = requests.post(url, data=json.dumps(body), headers={'Content-Type': 'application/json'})
-        if response.status_code == 200:
-            self.token = response.json().get('key')  
+        try:
+            response = self.make_api_request(
+                endpoint="dj-rest-auth/login/", 
+                method='POST', 
+                json={'username': username, 'password': password}  # Using 'json' to ensure proper JSON formatting
+            )
+            self.token = response.get('key')
             return "Login successful."
-        else:
-            return f"Login failed. Status code: {response.status_code}"
+        except requests.HTTPError as e:
+            return f"Login failed. HTTP error: {e.response.status_code} {e.response.reason}"
+        except Exception as e:
+            return f"Login failed. Error: {str(e)}"
 
-    def logout(self):
+    # def logout(self):
+    #     """
+    #     Log out from the API.
+
+    #     Returns:
+    #         str: The response text from the logout request.
+    #     """
+    #     url = f"{self.host_django}/dj-rest-auth/logout/"
+    #     response = requests.post(url, headers=self._authorized_headers())
+    #     return response.text
+
+    # def change_password(self, new_password):
+    #     """
+    #     Change the user's password.
+
+    #     Args:
+    #         new_password (str): The new password.
+
+    #     Returns:
+    #         dict: The response JSON containing the password change details.
+    #     """
+    #     url = f"{self.host_django}/dj-rest-auth/password/change/"
+    #     body = {
+    #         "new_password1": new_password,
+    #         "new_password2": new_password
+    #     }
+    #     response = requests.post(url, data=json.dumps(body), headers=self._authorized_headers())
+    #     return response.json()
+
+    # def get_user(self, user_id):
+    #     """
+    #     Get user details by user ID.
+
+    #     Args:
+    #         user_id (str): The ID of the user.
+
+    #     Returns:
+    #         str: The response text containing the user details.
+    #     """
+    #     url = f"{self.host_django}/api/users/{user_id}/"
+    #     response = requests.get(url, headers=self._authorized_headers())
+    #     return response.text
+
+    # def get_me(self):
+    #     """
+    #     Get the current user's details.
+
+    #     Returns:
+    #         None
+    #     """
+    #     url = f"{self.host_django}/api/users/me/"
+    #     response = requests.get(url, headers=self._authorized_headers())
+    #     if response.status_code == 200:
+    #         user_data = response.json()
+    #         username = user_data.get('username')
+    #         name = user_data.get('name')
+    #         user_url = user_data.get('url')
+
+    #         print("User details:")
+    #         print(f"Username: {username}")
+    #         print(f"Name: {name}")
+    #         print(f"URL: {user_url}")
+    #         print("-" * 20)
+    #     else:
+    #         print("Error fetching user details.")
+
+    def get_projects(self):
         """
-        Log out from the API.
-
-        Returns:
-            str: The response text from the logout request.
+        Get the list of projects and update self.projects_data.
         """
-        url = f"{self.host_django}/dj-rest-auth/logout/"
-        response = requests.post(url, headers=self._authorized_headers())
-        return response.text
+        try:
+            response = self.make_api_request(
+                endpoint="api/projects/",
+                method='GET',
+                headers = self._authorized_headers()
+            )
+            
+            self.projects_data = response.get('results', [])
+            if not self.projects_data:
+                print("No projects found.")
+                return None
 
-    def change_password(self, new_password):
-        """
-        Change the user's password.
+        except requests.HTTPError as e:
+            error_message = f"Error fetching projects. HTTP error: {e.response.status_code} {e.response.reason}"
+            logging.error(error_message)
+            print(error_message)
+            return None
+        except Exception as e:
+            error_message = f"Error fetching projects: {str(e)}"
+            logging.error(error_message)
+            print(error_message)
+            return None
+            
+    def list_projects(self):
+        self.get_projects()
+        # Create a list of lists for each project row
+        project_list = [[project.get('id'), project.get('name'), project.get('created_at')] 
+                        for project in self.projects_data]
 
-        Args:
-            new_password (str): The new password.
+        # Use tabulate to format the table
+        table = tabulate(project_list, headers=["Project ID", "Project Name", "Created At"], tablefmt="grid")
 
-        Returns:
-            dict: The response JSON containing the password change details.
-        """
-        url = f"{self.host_django}/dj-rest-auth/password/change/"
-        body = {
-            "new_password1": new_password,
-            "new_password2": new_password
-        }
-        response = requests.post(url, data=json.dumps(body), headers=self._authorized_headers())
-        return response.json()
-
-    def get_user(self, user_id):
-        """
-        Get user details by user ID.
-
-        Args:
-            user_id (str): The ID of the user.
-
-        Returns:
-            str: The response text containing the user details.
-        """
-        url = f"{self.host_django}/api/users/{user_id}/"
-        response = requests.get(url, headers=self._authorized_headers())
-        return response.text
-
-    def get_me(self):
-        """
-        Get the current user's details.
-
-        Returns:
-            None
-        """
-        url = f"{self.host_django}/api/users/me/"
-        response = requests.get(url, headers=self._authorized_headers())
-        if response.status_code == 200:
-            user_data = response.json()
-            username = user_data.get('username')
-            name = user_data.get('name')
-            user_url = user_data.get('url')
-
-            print("User details:")
-            print(f"Username: {username}")
-            print(f"Name: {name}")
-            print(f"URL: {user_url}")
-            print("-" * 20)
-        else:
-            print("Error fetching user details.")
-
+        # Print the formatted table
+        print(table)
+        return None
+        
     def create_project(self, name):
         """
         Create a new project.
@@ -210,52 +277,87 @@ class syntheticus_client:
         Args:
             name (str): The name of the project.
 
-        Returns:
-            dict: The response JSON containing the project details.
+        Raises:
+            Exception: If the project creation fails.
         """
-        url = f"{self.host_django}/api/projects/"
-        body = {
-            "name": name
-        }
-        response = requests.post(url, data=json.dumps(body), headers=self._authorized_headers())
-        if response.status_code == 201:
-            project_data = response.json()
+        try:
+            response = self.make_api_request(
+                endpoint="api/projects/",
+                method='POST',
+                data=json.dumps({'name': name}),
+                headers = self._authorized_headers()
+            )
+
+            project_data = response
             project_id = project_data.get('id')
-            project_name = project_data.get('name')
-            created_at = project_data.get('created_at')
+            self.projects[project_id] = project_data.get('name')
+            self.project_id = project_id
 
-            print("Project created:")
-            print(f"ID: {project_id}")
-            print(f"Name: {project_name}")
-            print(f"Created at: {created_at}")
-            print("-" * 20)
+            # Format and print the success message
+            success_message = (
+                f"Project '{name}' created and selected successfully.\n"
+                f"Project ID: {project_id}\n"
+                f"Project Name: {project_data.get('name')}\n"
+                f"Created At: {project_data.get('created_at')}"
+            )
+            print(success_message)
 
-            self.projects[project_id] = project_name
-            self.project_id = project_id    
-        else:
-            print('Error creating the project.')
+            # Optionally, return the raw project data without the message
+            #return project_data
 
-    def get_projects(self):
-        """
-        Get the list of projects and update self.projects_data.
-        """
-        url = f"{self.host_django}/api/projects/"
-        response = requests.get(url, headers=self._authorized_headers())
-        if response.status_code == 200:
-            self.projects_data = response.json().get('results', [])
-            if not self.projects_data:
-                print("No projects found.")
-        else:
-            print("Error fetching projects.")
+        except requests.HTTPError as e:
+            error_message = f"Error creating the project. HTTP error: {e.response.status_code} {e.response.reason}"
+            logging.error(error_message)
+            raise Exception(error_message)
+        except Exception as e:
+            error_message = f"Error creating the project: {str(e)}"
+            logging.error(error_message)
+            raise Exception(error_message)
     
-    #TO BE FIX
-    # def select_project(self, project_id):
-    #     if project_id in self.projects:
-    #         self.project_id = project_id
-    #         self.project_name = self.projects[project_id]
-    #         print(f"Project selected: {project_id} with name {self.projects[project_id]}")
-    #     else:
-    #         print(f"Project with ID {project_id} not found.")
+    def select_project(self, project_id):
+
+        if not self.projects_data:
+            self.get_projects()
+            
+        project = next((proj for proj in self.projects_data if proj.get('id') == project_id), None)
+
+        if project:
+            self.project_id = project_id
+            self.project_name = project.get('name')
+            print(f"Project selected: {project_id} with name {self.project_name}")
+        else:
+            print(f"Project with ID {project_id} not found.")
+            
+    def delete_project(self, project_id):
+        """
+        Delete a project.
+
+        Args:
+            project_id (str): The ID of the project to delete.
+
+        Returns:
+            str: The status message indicating the success or failure of the project deletion.
+
+        Raises:
+            Exception: If the project deletion fails.
+        """
+        try:
+            self.make_api_request(
+                endpoint=f"api/projects/{project_id}/",
+                method='DELETE',
+                headers = self._authorized_headers()
+            )
+            print("Project deleted successfully.")
+
+        except requests.HTTPError as e:
+            error_message = f"Error deleting project. HTTP error: {e.response.status_code} {e.response.reason}"
+            logging.error(error_message)
+            raise Exception(error_message)
+
+        except Exception as e:
+            error_message = f"Error deleting project: {str(e)}"
+            logging.error(error_message)
+            raise Exception(error_message)
     
     def wrap_text(text, width):
         wrapped_lines = textwrap.wrap(text, width=width)
@@ -278,16 +380,21 @@ class syntheticus_client:
             print("Please select a valid project ID.")
             return
         
-        url = f"{self.host_django}/api/projects/{self.project_id}/list-dataset-folders/"
+        # Prepare the endpoint URL
+        endpoint = f"api/projects/{self.project_id}/list-dataset-folders/"
         payload = {}
         files = {}
         headers = {
         'Authorization': f'Token {self.token}'
         }
+        # Use make_api_call to perform the API request
+        self.data = self.make_api_request(endpoint=endpoint, method="GET", headers=headers, data=payload, files=files)
 
-        response = requests.request("GET", url, headers=headers, data=payload, files=files)
-        self.data = json.loads(response.text)
-
+        #self.data = response.get('results', [])
+        return None
+    
+    def list_datasets(self):
+        self.get_datasets()
         # Prepare data for table
         self.table_data = []
         for result in self.data.get('results', []):
@@ -313,6 +420,7 @@ class syntheticus_client:
 
         # Print table
         print(tabulate(self.table_data, headers=headers, tablefmt='pretty'))
+        return None
 
     def select_dataset(self, dataset_id):
         if dataset_id in self.datasets:
@@ -321,24 +429,6 @@ class syntheticus_client:
             print(f"Dataset selected: {dataset_id} with name {self.datasets[dataset_id]}")
         else:
             print(f"Dataset with ID {dataset_id} not found.")
-
-        
-    def delete_project(self, project_id):
-        """
-        Delete a project.
-
-        Args:
-            project_id (str): The ID of the project to delete.
-
-        Returns:
-            str: The status message indicating the success or failure of the project deletion.
-        """
-        url = f"{self.host_django}/api/projects/{project_id}/"
-        response = requests.delete(url, headers=self._authorized_headers())
-        if response.status_code == 204:
-            return "Project deleted successfully."
-        else:
-            return f"Error deleting project {response.status_code}"
 
     @staticmethod
     def get_mime_type(file_name):
@@ -433,25 +523,31 @@ class syntheticus_client:
             print(f"Error occurred while re-uploading the configuration file: STATUS CODE {response.status_code}")
 
     def get_models(self):
-        """This method lists all the available models"""
+        """Fetches the available models and stores them in self.models."""
         url = f"{self.host_airflow}/api/v1/dags"
         response = self.session.get(url)
         if response.status_code == 200:
             self.models = response.json().get('dags', [])
-            if self.models:
-                print("Available Models:")
-                table_data = []
-                for item in self.models:
-                    dag_id = item.get('dag_id')
-                    description = item.get('description')
-                    table_data.append([dag_id, description])
-
-                headers = ['Model ID', 'Description']
-                print(tabulate(table_data, headers=headers, tablefmt='pretty'))
-            else:
-                print("No models available.")
         else:
-            print("Error fetching models.",response.status_code)
+            print(f"Error fetching models. Status Code: {response.status_code}")
+            self.models = []
+
+ 
+    def list_models(self):
+        self.get_models()
+        """Prints the available models, if any."""
+        if self.models:
+            print("Available Models:")
+            table_data = []
+            for item in self.models:
+                dag_id = item.get('dag_id')
+                description = item.get('description')
+                table_data.append([dag_id, description])
+
+            headers = ['Model ID', 'Description']
+            print(tabulate(table_data, headers=headers, tablefmt='pretty'))
+        else:
+            print("No models available.")
 
     def select_model(self, model_id):
             self.model_id = model_id
@@ -471,55 +567,50 @@ class syntheticus_client:
             state = dag_run["state"]
             logging.info(f"Model run ID: {dag_run_id}, state: {state}")
 
-    def fit(self):
-        """
-        Triggers the fit process for the selected model.
+    # def fit(self):
+    #     """
+    #     Triggers the fit process for the selected model.
 
-        Raises:
-            Exception: If an unexpected error occurs during the fit process.
+    #     Raises:
+    #         Exception: If an unexpected error occurs during the fit process.
 
-        Returns:
-            str: A message indicating the success or failure of the fit process.
+    #     Returns:
+    #         str: A message indicating the success or failure of the fit process.
 
-        """
-        url = f"{self.host_django}/api/projects/{self.project_id}/run-dag/"
+    #     """
+    #     url = f"{self.host_django}/api/projects/{self.project_id}/run-dag/"
 
-        payload = json.dumps({
-            "dag_name": f"{self.model_id}",
-        })
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Token {self.token}'
-        }
+    #     payload = json.dumps({
+    #         "dag_name": f"{self.model_id}",
+    #     })
+    #     headers = {
+    #         'Content-Type': 'application/json',
+    #         'Authorization': f'Token {self.token}'
+    #     }
 
-        try:
-            response = requests.request("POST", url, headers=headers, data=payload)
-            response.raise_for_status()
+    #     try:
+    #         response = requests.request("POST", url, headers=headers, data=payload)
+    #         response.raise_for_status()
 
-            # Join the response strings into one string
-            response_string = ''.join(json.loads(response.text))
+    #         # Join the response strings into one string
+    #         response_string = ''.join(json.loads(response.text))
 
-            # Convert the JSON string into a dictionary
-            response_dict = json.loads(response_string)
+    #         # Convert the JSON string into a dictionary
+    #         response_dict = json.loads(response_string)
 
-            # Print the important information in a nice way
-            print(f"Project Name: {response_dict['conf']['project_name']}")
-            print(f"Model name: {response_dict['dag_id']}")
-            print(f"Model Run ID: {response_dict['dag_run_id']}")
-            print(f"Execution Date: {response_dict['execution_date']}")
-            print(f"State: {response_dict['state']}")
-            print('')
-            print('The fit process has been triggered successfully.')
-            return 'The fit process has been triggered successfully.'
+    #         # Print the important information in a nice way
+    #         print(f"Project Name: {response_dict['conf']['project_name']}")
+    #         print(f"Model name: {response_dict['dag_id']}")
+    #         print(f"Model Run ID: {response_dict['dag_run_id']}")
+    #         print(f"Execution Date: {response_dict['execution_date']}")
+    #         print(f"State: {response_dict['state']}")
+    #         print('')
+    #         print('The fit process has been triggered successfully.')
+    #         return 'The fit process has been triggered successfully.'
 
-        except requests.exceptions.RequestException as err:
-            logging.error(f"An error occurred during the fit process: {err}")
-            return "An error occurred during the fit process."
-        finally:
-            self.project_id = None
-            self.dataset_id = None
-            self.model_id = None
-            self.config_file_path = None
+    #     except requests.exceptions.RequestException as err:
+    #         logging.error(f"An error occurred during the fit process: {err}")
+    #         return "An error occurred during the fit process."
     
     #### the following will be deprecated in future versions. Use django API instead.    
     def synthetize(self):
@@ -567,42 +658,42 @@ class syntheticus_client:
         except requests.exceptions.RequestException as err:
             logging.error(f"An error occurred during synthesis: {err}")
             return "An error occurred during synthesis."
-        finally:
-            self.project_id = None
-            self.dataset_id = None
-            self.model_id = None
-            self.config_file_path = None
-
-    def list_commits(self):
+        
+    def get_commits(self):
         """
-        Lists commits for the selected project.
-
-        Returns:
-            None
+        Fetches commits for the selected project and stores them in self.commits.
 
         Raises:
             requests.exceptions.RequestException: If an error occurs during the API request.
-
         """
-        try:
-            if self.project_id is None:
-                print('Please select a project_id first.')
-            else:
-                url = f"{self.host_django}/api/projects/{self.project_id}/commit-logs/"
-                headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Token {self.token}'
-                }
+        if self.project_id is None:
+            print('Please select a project_id first.')
+            self.commits = None
+            return
+      
+        endpoint = f"api/projects/{self.project_id}/commit-logs/"
+        headers = {
+            'Authorization': f'Token {self.token}'
+        }
+        
+        # Assuming make_api_request is correctly implemented to handle the request
+        self.commits = self.make_api_request(endpoint=endpoint, method="GET", headers=headers)
 
-                response = requests.get(url, headers=headers)
-                response.raise_for_status()
+    def list_commits(self):
+        """
+        Prints the fetched commits for the selected project.
 
-                self.commits = response.json()
-                print(f'List of experiments in the selected project ({self.project_id}):')
-                print(tabulate(self.commits, headers="keys", tablefmt="pretty"))
+        Returns:
+            None
+        """
+        self.get_commits()
+        if not self.commits:
+            print("No commits available or commits have not been fetched yet.")
+            return
 
-        except requests.exceptions.RequestException as err:
-            logging.error(f"An error occurred while listing commits: {err}")
+        print(f'List of commits in the selected project ({self.project_id}):')
+        print(tabulate(self.commits, headers="keys", tablefmt="pretty"))
+
 
     def select_commit(self, commit_id):
         """
@@ -616,7 +707,7 @@ class syntheticus_client:
 
         """
         if self.project_id is not None:
-            self.commit = commit_id
+            self.commit_id = commit_id
             print(f"Commit {commit_id} selected in project {self.project_id}.")
         else:
             print("Please select a project_id first using the select_project() method.")
@@ -640,13 +731,13 @@ class syntheticus_client:
 
         """
         try:
-            if self.project_id and self.commit is not None:
+            if self.project_id and self.commit_id is not None:
                 # Construct the URL for the API endpoint
                 url = f"{self.host_django}/api/projects/{self.project_id}/download-airflow-data/"
                 
                 # Prepare payload for the POST request
                 payload = json.dumps({
-                    "commit": f"{self.commit}",
+                    "commit": f"{self.commit_id}",
                     "data_to_download": f"{data_to_download}"
                 })
                 
@@ -688,3 +779,29 @@ class syntheticus_client:
             print(f"An error occurred due to invalid parameter values: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+
+    def reset(self):
+        """Resets all specified instance variables to None."""
+        self.projects_data = []
+        self.table_data = []  # Initialize as an empty list
+        self.projects = {} # dictionary with the list of projects
+        self.datasets = {} # dictionary with the list of datasets for a project
+        
+        self.project_id = None
+        self.project_name = None
+        self.model_id = None
+        self.dataset_id = None
+        self.dataset_name = None
+        self.config_file_path = None
+        self.commit_id = None
+        
+    def show_setup(self):
+            """Prints the current setup information in a readable format."""
+            print("Current Setup Information:")
+            print(f"Project ID: {self.project_id or 'Not Set'}")
+            print(f"Project Name: {self.project_name or 'Not Set'}")
+            print(f"Dataset ID: {self.dataset_id or 'Not Set'}")
+            print(f"Model ID: {self.model_id or 'Not Set'}")
+            print(f"Dataset Name: {self.dataset_name or 'Not Set'}")
+            print(f"Config File Path: {self.config_file_path or 'Not Set'}")
+            print(f"Commit ID: {self.commit_id or 'Not Set'}")

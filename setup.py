@@ -19,8 +19,7 @@ setup(
         'pandas',
         'tabulate',
         'ipywidgets',
-        'ipython',
-        'tornado'
+        'ipython'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

@@ -1,0 +1,786 @@
+{
+    "fields": {
+        "PKEY": {
+            "type": "numerical",
+            "subtype": "integer"
+        },
+        "BOID": {
+            "type": "id",
+            "subtype": "integer"
+        },
+        "METABO": {
+            "type": "numerical",
+            "subtype": "integer"
+        },
+        "LASTUPDATE": {
+            "type": "categorical"
+        },
+        "PROCESSID": {
+            "type": "categorical"
+        },
+        "ROWCOMMENT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "CREATED": {
+            "type": "categorical"
+        },
+        "BIZCREATED": {
+            "type": "categorical"
+        },
+        "CREATEDUSER": {
+            "type": "categorical"
+        },
+        "BIZUSER": {
+            "type": "categorical"
+        },
+        "REPLACED": {
+            "type": "categorical"
+        },
+        "REPLACEDUSER": {
+            "type": "categorical"
+        },
+        "GUELTAB": {
+            "type": "categorical"
+        },
+        "GUELTBIS": {
+            "type": "categorical"
+        },
+        "STATEFROM": {
+            "type": "categorical"
+        },
+        "STATEUPTO": {
+            "type": "categorical"
+        },
+        "STATEBEGIN": {
+            "type": "categorical"
+        },
+        "STATEEND": {
+            "type": "categorical"
+        },
+        "BEZEICHNUNGDT": {
+            "type": "categorical"
+        },
+        "NL_BEZEICHNUNGDT": {
+            "type": "categorical"
+        },
+        "BEZEICHNUNGEN": {
+            "type": "categorical"
+        },
+        "NL_BEZEICHNUNGEN": {
+            "type": "categorical"
+        },
+        "BEZEICHNUNGFR": {
+            "type": "categorical"
+        },
+        "NL_BEZEICHNUNGFR": {
+            "type": "categorical"
+        },
+        "BEZEICHNUNGIT": {
+            "type": "categorical"
+        },
+        "NL_BEZEICHNUNGIT": {
+            "type": "categorical"
+        },
+        "INTERNALNAME": {
+            "type": "categorical"
+        },
+        "TARIFZIFFER": {
+            "type": "categorical"
+        },
+        "NL_TARIFZIFFER": {
+            "type": "categorical"
+        },
+        "ITSTARIFTYP": {
+            "type": "id",
+            "subtype": "string"
+        },
+        "TARIF": {
+            "type": "categorical"
+        },
+        "NL_TARIF": {
+            "type": "categorical"
+        },
+        "BEHANDLUNGSART": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "GESCHLECHT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIXDT": {
+            "type": "categorical"
+        },
+        "APPENDIXEN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIXFR": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIXIT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIX05": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIX06": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIX07": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIX08": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIX09": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "APPENDIX10": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREIS": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISVERSICHERER": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISEXF": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISFAKTOR": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISEINHEITSTYP": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "TARIFPREISGRUPPE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ITSWAEHRUNG": {
+            "type": "id",
+            "subtype": "string"
+        },
+        "PFLICHLSTG": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "LSTGZUSART": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "LSTGTYP": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SEITENANGABE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BERICHT_MIN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "LSTIMEIGSINN_MIN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "RAUM_MIN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "VORNACHBEARB_MIN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "WECHSEL_MIN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ZUSATZLST_MIN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ANZ_ASSISTENTEN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "TP_AL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "TP_TL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "F_AL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "F_TL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "TP_ASS": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_PARTITION": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_CWH": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_MVD": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_LTP": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_LTP_CWD": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_HTP_1": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_HTP_2": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_HTP_CWD": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_FAKTURIERUNG": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_EXTVERLAB_CWD": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_VERLEGPAUSCH": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_AUSWIEDERAUFN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_UNTERBEWERTET": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_FRUEHREHA": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_LERBGRP": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_K1": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_K2": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_CV1": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_CV2": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_INL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_TOT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ITSAUSZETARGRP": {
+            "type": "id",
+            "subtype": "string"
+        },
+        "DRG_CWH_GEB": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_LTP_CWD_GEB": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_HTP_CWD_GEB": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRG_EXTVERLAB_GEB": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISPUB": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISAP": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISDG": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISHOSP": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISEXFBAG": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISBAG": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISSL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISARZT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISSAV": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISMO": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISPUB_DEL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISAP_DEL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISEXF_DEL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISARZT_DEL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISSL_DEL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISEXFBAG_DEL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISBAG_DEL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PREISHERKUNFT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "GROUPCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "IKSKEY": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "HSCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "IKSCAT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PRODUCTKEY": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "HOSPCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "CLINICCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "GENERICCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PIND": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "LOACODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "NEWINSCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "INSCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "INSCODELIM": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "GRDFRCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DRGGRPCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "KUEHLUNGSCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "LIMPOINTS": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "MULTIPL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "MULTIPLEINHEIT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "GALENISCHEFORM": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "MENGE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "EINHEIT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DOSE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DOSEEINHEIT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SLOPLUS": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "MEDERHAELTLICH": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "IKSDATE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "IKSCANCELDATE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SLDATE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SLCANCELDATE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SLCANCELDATEOKP": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "GGL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "TRADECODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ATCCODE1": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ATCCODE2": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "GENGRPCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SORTIMENTCODE1": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SORTIMENTCODE2": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BETMITLLAW": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BETMITLCODE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "VAT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "OUTSALEDATE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SM_CAT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SM_NOTI": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "TAEL_ID": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ZIFFERKOA": {
+            "type": "categorical"
+        },
+        "ZIFFERKOAOVR": {
+            "type": "numerical",
+            "subtype": "integer"
+        },
+        "TZIMPORTMODE": {
+            "type": "numerical",
+            "subtype": "integer"
+        },
+        "LASTMUTATION": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "VALIDSTATE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SINGLEDOSE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "PRODUCT_TAEL_ID": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SISTIERUNGBEGINN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "SISTIERUNGENDE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BFS": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BLUTPRODUKT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ORPHANDRUGSTATUS": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BIOPHARMAZEUTIKUM": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BIOSIMILAR": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ISTBIOZIDPRODUKT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BIOZIDBAGNR": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "VORLICHTSCHUETZEN": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "LEISTUNGSPFLICHT": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "TIMESEG": {
+            "type": "categorical"
+        },
+        "ARCHIVETAG": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "FACTOR_SCHWELLE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "FACTOR_MAX": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "FACTOR_INSURANCE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "MAXPREIS": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "HERSTELLERABSCHLAG": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BETRAGSTUFE": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "RABATTIMPFSTOFF": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "RABATTARZNEIMITTEL": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "RABATTGENERIKA": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "RABATTMORATORIUM": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "ARTIKELTYP": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BUNDESLAND": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "EINSTUFUNG": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "MDBID": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "NL_BEZEICHNUNG05": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BEZEICHNUNG05": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "NL_BEZEICHNUNG06": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BEZEICHNUNG06": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "NL_BEZEICHNUNG07": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BEZEICHNUNG07": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "NL_BEZEICHNUNG08": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BEZEICHNUNG08": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "NL_BEZEICHNUNG09": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BEZEICHNUNG09": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "NL_BEZEICHNUNG10": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "BEZEICHNUNG10": {
+            "type": "numerical",
+            "subtype": "float"
+        },
+        "DAILYDOSE": {
+            "type": "numerical",
+            "subtype": "float"
+        }
+    }
+}

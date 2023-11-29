@@ -81,7 +81,10 @@ class syntheticus_client:
         if not self.host_django:
             raise ValueError("Host DJANGO_URL must be provided, either as environment variables or directly as arguments")
         
-        self.token = None # user token assigned at login
+        self.token = os.getenv('USER_TOKEN')
+        if not self.token:
+            print("Warning: User token not found. Proceed with login after initialization.")
+            
         self.user = None # username
         self.password = None # passwod
         

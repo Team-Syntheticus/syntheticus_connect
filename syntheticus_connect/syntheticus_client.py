@@ -81,7 +81,10 @@ class syntheticus_client:
         if not self.host_django:
             raise ValueError("Host DJANGO_URL must be provided, either as environment variables or directly as arguments")
         
-        self.token = None # user token assigned at login
+        self.token = os.getenv('USER_TOKEN')
+        if not self.token:
+            print("Warning: User token not found. Proceed with login after initialization.")
+            
         self.user = None # username
         self.password = None # passwod
         
@@ -662,22 +665,35 @@ class syntheticus_client:
     def get_commits(self):
         """
         Fetches commits for the selected project and stores them in self.commits.
-
-        Raises:
-            requests.exceptions.RequestException: If an error occurs during the API request.
         """
         if self.project_id is None:
             print('Please select a project_id first.')
             self.commits = None
             return
-      
+
         endpoint = f"api/projects/{self.project_id}/commit-logs/"
-        headers = {
-            'Authorization': f'Token {self.token}'
-        }
-        
-        # Assuming make_api_request is correctly implemented to handle the request
-        self.commits = self.make_api_request(endpoint=endpoint, method="GET", headers=headers)
+        headers = {'Authorization': f'Token {self.token}'}
+
+        try:
+            # make_api_request might return a JSON-decoded response or None
+            commits_data = self.make_api_request(endpoint=endpoint, method="GET", headers=headers)
+
+            if commits_data is None:
+                # This could mean no data found or a successful operation with no content (204 No Content)
+                print("No commits data found or received an empty response.")
+                self.commits = None
+            else:
+                # Successfully retrieved data
+                self.commits = commits_data
+
+        except requests.HTTPError as http_err:
+            # Handle HTTP errors separately
+            print(f"HTTP error occurred: {http_err}")
+            self.commits = None
+        except Exception as e:
+            # Handle any other exceptions
+            print(f"An error occurred while making the API request: {e}")
+            self.commits = None
 
     def list_commits(self):
         """

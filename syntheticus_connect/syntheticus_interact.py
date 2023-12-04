@@ -216,7 +216,9 @@ class syntheticus_interact(syntheticus_client):
             None
         """
         self.get_commits()  # Fetch commits data
-
+        if not self.commits:
+            print("No commits available or commits have not been fetched yet.")
+            return
         commit_strings = [f"ID: {entry['commit']}, Message: {entry['subject']}" for entry in self.commits]
         commit_strings.insert(0, "Select a commit")
 
@@ -237,11 +239,11 @@ class syntheticus_interact(syntheticus_client):
 
             if selected_index >= 0:
                 selected_commit = self.commits[selected_index]
-                self.commit = selected_commit['commit']
+                self.commit_id = selected_commit['commit']
 
                 with self.commit_output_area:
                     self.commit_output_area.clear_output()
-                    print(f"Selected commit ID: {self.commit}")
+                    print(f"Selected commit ID: {self.commit_id}")
                     print(f"Selected commit message: {selected_commit['subject']}")
             else:
                 with self.commit_output_area:

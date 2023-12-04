@@ -76,7 +76,7 @@ class syntheticus_client:
             host_airflow (str, optional): The base URL of the Airflow API.
         """
         self.host_django = host_django or os.getenv('DJANGO_URL')
-        self.host_airflow = host_airflow or os.getenv('JUPYTER_URL')
+        self.host_airflow = host_airflow or os.getenv('AIRFLOW_URL')
 
         if not self.host_django:
             raise ValueError("Host DJANGO_URL must be provided, either as environment variables or directly as arguments")

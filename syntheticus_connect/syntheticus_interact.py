@@ -31,6 +31,72 @@ class syntheticus_interact(syntheticus_client):
 
         display(VBox([username_input, password_input, login_button, output_area]))
 
+    # def project_select(self):
+    #     """
+    #     Create a project selection dropdown widget.
+    #     """
+    #     # Fetch project data
+    #     self.get_projects()
+
+    #     # Remove duplicate projects if any (based on project ID)
+    #     unique_projects = {proj['id']: proj for proj in self.projects_data}.values()
+
+    #     # Prepare project strings for the dropdown
+    #     project_strings = [f"ID: {project['id']}, Name: {project['name']}"
+    #                        for project in unique_projects] or ["No projects available"]
+
+    #     # Create or update the Dropdown widget
+    #     if hasattr(self, 'project_dropdown_widget'):
+    #         self.project_dropdown_widget.options = project_strings
+    #         self.project_dropdown_widget.value = project_strings[0] if project_strings else None
+    #     else:
+    #         self.project_dropdown_widget = Dropdown(
+    #             options=project_strings,
+    #             value=project_strings[0] if project_strings else None,
+    #             description='Select:',
+    #             disabled=not bool(project_strings),
+    #             layout=Layout(width='auto')
+    #         )
+
+    #     # Create or update the Output area
+    #     if not hasattr(self, 'project_output_area'):
+    #         self.project_output_area = Output()
+
+    #     def update_variables(change):
+    #         """
+    #         Update variables based on the selected dropdown value.
+
+    #         This function is called whenever the dropdown value changes.
+    #         It updates the selected project's information and displays it.
+
+    #         Args:
+    #             change (dict): A dictionary containing information about the change.
+
+    #         Returns:
+    #             None
+    #         """
+    #         selected_value = change['new']
+    #         selected_index = project_strings.index(selected_value)
+    #         selected_project = self.projects_data[selected_index]
+    #         self.project_id = selected_project['id']
+    #         self.project_name = selected_project['name']
+
+    #         # Clear previous output and display the new project info
+    #         with self.project_output_area:
+    #             self.project_output_area.clear_output()
+    #             print(f"Selected Project ID: {self.project_id}")
+    #             print(f"Selected Project Name: {self.project_name}")
+
+    #     # Attach the update function to the dropdown's 'value' property changes
+    #     self.project_dropdown_widget.observe(update_variables, names='value')
+
+    #     # Check if there's only one project in the dropdown
+    #     if len(project_strings) == 1:
+    #         update_variables({'new': self.project_dropdown_widget.value})
+
+    #     # Display the Dropdown widget and the output area only once
+    #     display(VBox([self.project_dropdown_widget, self.project_output_area]))
+
     def project_select(self):
         """
         Create a project selection dropdown widget.
@@ -76,16 +142,22 @@ class syntheticus_interact(syntheticus_client):
                 None
             """
             selected_value = change['new']
-            selected_index = project_strings.index(selected_value)
-            selected_project = self.projects_data[selected_index]
-            self.project_id = selected_project['id']
-            self.project_name = selected_project['name']
 
-            # Clear previous output and display the new project info
-            with self.project_output_area:
-                self.project_output_area.clear_output()
-                print(f"Selected Project ID: {self.project_id}")
-                print(f"Selected Project Name: {self.project_name}")
+            # Extract the project ID from the selected dropdown value
+            selected_project_id = selected_value.split(",")[0].split(":")[1].strip()
+
+            # Find the corresponding project in the projects_data
+            selected_project = next((proj for proj in self.projects_data if str(proj['id']) == selected_project_id), None)
+
+            if selected_project:
+                self.project_id = selected_project['id']
+                self.project_name = selected_project['name']
+
+                # Clear previous output and display the new project info
+                with self.project_output_area:
+                    self.project_output_area.clear_output()
+                    print(f"Selected Project ID: {self.project_id}")
+                    print(f"Selected Project Name: {self.project_name}")
 
         # Attach the update function to the dropdown's 'value' property changes
         self.project_dropdown_widget.observe(update_variables, names='value')
@@ -94,7 +166,7 @@ class syntheticus_interact(syntheticus_client):
         if len(project_strings) == 1:
             update_variables({'new': self.project_dropdown_widget.value})
 
-        # Display the Dropdown widget and the output area only once
+        # Display the Dropdown widget and the output area
         display(VBox([self.project_dropdown_widget, self.project_output_area]))
 
     def dataset_select(self):

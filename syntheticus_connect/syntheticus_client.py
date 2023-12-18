@@ -13,7 +13,9 @@ import textwrap
 import pandas as pd
 import zipfile
 import io
-
+import threading
+import time
+from requests.auth import HTTPBasicAuth # to be deprecated
 
 class syntheticus_client:    
     """
@@ -104,6 +106,7 @@ class syntheticus_client:
         self.dataset_name = None # selected dataset name
         self.config_file_path = None # path to the config file
         self.commit_id = None # commit id
+        
         
     # def register(self, username, email, password):
     #     """
@@ -615,7 +618,27 @@ class syntheticus_client:
     #         logging.error(f"An error occurred during the fit process: {err}")
     #         return "An error occurred during the fit process."
     
-    #### the following will be deprecated in future versions. Use django API instead.    
+    #### the following will be deprecated in future versions. Use django API instead.   
+    def monitor_airflow(self, dag_id, run_id, interval=60):
+        """Monitor a specific DAG run in Airflow."""
+        airflow_base_url = f"{self.host_airflow}/api/v1"
+        
+        while True:
+            try:
+                response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}", auth=HTTPBasicAuth('airflow', 'airflow'))
+                data = response.json()
+                dag_state = data.get('state')
+
+                if dag_state == 'success':
+                    print("DAG run completed successfully. Monitoring stopped.")
+                    break  # This line stops the loop (and thus the thread) when DAG run is successful.
+                elif dag_state != 'running':
+                    print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
+            except Exception as e:
+                print(f"Error monitoring Airflow: {e}")
+            
+            time.sleep(interval)
+     
     def synthetize(self):
         """
         Triggers the data synthesis process.
@@ -653,6 +676,9 @@ class syntheticus_client:
 
             if response.status_code // 100 == 2:  # Check if status code is in the 2xx range
                 logging.info("Synthesis triggered successfully!")
+                if response.status_code // 100 == 2:
+                    monitor_thread = threading.Thread(target=self.monitor_airflow, args=(self.model_id, run_id,))
+                    monitor_thread.start()
                 return 'Synthesis triggered successfully!'
             else:
                 logging.error(f"Synthesis trigger returned HTTP {response.status_code}: {response.text}")

@@ -16,6 +16,8 @@ import io
 import threading
 import time
 from requests.auth import HTTPBasicAuth # to be deprecated
+from IPython.display import display, HTML, clear_output
+import ipywidgets as widgets
 
 class syntheticus_client:    
     """
@@ -107,7 +109,7 @@ class syntheticus_client:
         self.config_file_path = None # path to the config file
         self.commit_id = None # commit id
         
-        
+        self.output_widget = widgets.Output()
     # def register(self, username, email, password):
     #     """
     #     Register a new user.
@@ -619,26 +621,140 @@ class syntheticus_client:
     #         return "An error occurred during the fit process."
     
     #### the following will be deprecated in future versions. Use django API instead.   
-    def monitor_airflow(self, dag_id, run_id, interval=60):
-        """Monitor a specific DAG run in Airflow."""
-        airflow_base_url = f"{self.host_airflow}/api/v1"
+    # def monitor_airflow(self, dag_id, run_id, interval=60):
+    #     """Monitor a specific DAG run in Airflow."""
+    #     airflow_base_url = f"{self.host_airflow}/api/v1"
         
-        while True:
-            try:
-                response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}", auth=HTTPBasicAuth('airflow', 'airflow'))
-                data = response.json()
-                dag_state = data.get('state')
+    #     while True:
+    #         try:
+    #             response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}", auth=HTTPBasicAuth('airflow', 'airflow'))
+    #             data = response.json()
+    #             dag_state = data.get('state')
 
-                if dag_state == 'success':
-                    print("DAG run completed successfully. Monitoring stopped.")
-                    break  # This line stops the loop (and thus the thread) when DAG run is successful.
-                elif dag_state != 'running':
-                    print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
-            except Exception as e:
-                print(f"Error monitoring Airflow: {e}")
+    #             if dag_state == 'success':
+    #                 print("DAG run completed successfully. Monitoring stopped.")
+    #                 break  # This line stops the loop (and thus the thread) when DAG run is successful.
+    #             elif dag_state != 'running':
+    #                 print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
+    #         except Exception as e:
+    #             print(f"Error monitoring Airflow: {e}")
             
-            time.sleep(interval)
+    #         time.sleep(interval)
      
+    # def monitor_airflow(self,dag_id, run_id, interval=10):
+    #     """Monitor a specific DAG run in Airflow."""
+    #     airflow_base_url = f"{self.host_airflow}/api/v1"
+        
+    #     while True:
+    #         try:
+    #             response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}",
+    #                                     auth=HTTPBasicAuth('airflow', 'airflow'))
+    #             response.raise_for_status()
+    #             data = response.json()
+    #             dag_state = data.get('state')
+    #             # Log the status of each task
+    #             for task in data.get('tasks', []):
+    #                 print(f"Task {task['taskId']}: {task['state']}")
+
+    #             if dag_state == 'success':
+    #                 print("DAG run completed successfully. Monitoring stopped.")
+    #                 break
+    #             elif dag_state != 'running':
+    #                 print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
+    #         except requests.RequestException as e:
+    #             print(f"Error monitoring Airflow: {e}")
+
+    #         time.sleep(interval)
+     
+    # def monitor_airflow(self, dag_id, run_id, interval=10):
+    #     """Monitor a specific DAG run in Airflow."""
+    #     airflow_base_url = f"{self.host_airflow}/api/v1"
+
+    #     while True:
+    #         try:
+    #             # Request to get the state of the DAG run
+    #             dag_run_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}",
+    #                                             auth=HTTPBasicAuth('airflow', 'airflow'))
+    #             dag_run_response.raise_for_status()
+    #             dag_run_data = dag_run_response.json()
+    #             dag_state = dag_run_data.get('state')
+
+    #             # Request to get the states of all tasks in the DAG run
+    #             task_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}/taskInstances",
+    #                                          auth=HTTPBasicAuth('airflow', 'airflow'))
+    #             task_response.raise_for_status()
+    #             tasks_data = task_response.json()
+
+    #             # Print the status of each task
+    #             print(f"DAG Run State: {dag_state}")
+    #             for task in tasks_data.get('task_instances', []):
+    #                 print(f"Task {task['task_id']}: {task['state']}")
+
+    #             if dag_state in ['success', 'failed']:
+    #                 print(f"DAG run completed with state: {dag_state}. Monitoring stopped.")
+    #                 break
+    #             elif dag_state != 'running':
+    #                 print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
+
+    #         except requests.RequestException as e:
+    #             print(f"Error monitoring Airflow: {e}")
+
+    #         time.sleep(interval) 
+
+    def monitor_airflow(self, dag_id, run_id, interval=10):
+        """Monitor a specific DAG run in Airflow with color-coded visualization."""
+        airflow_base_url = f"{self.host_airflow}/api/v1"
+
+        # Prepare HTML content and table structure outside the loop
+        html_content = ""
+        html_content += "<h3>DAG Run State: </h3>"
+        html_content += "<table><tr><th>Task</th><th>State</th></tr>"
+
+        try:
+            while True:
+                try:
+                    # Fetch DAG run and task states
+                    dag_run_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}", auth=HTTPBasicAuth('airflow', 'airflow'))
+                    dag_run_response.raise_for_status()
+                    dag_run_data = dag_run_response.json()
+                    dag_state = dag_run_data.get('state')
+
+                    task_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}/taskInstances", auth=HTTPBasicAuth('airflow', 'airflow'))
+                    task_response.raise_for_status()
+                    tasks_data = task_response.json()
+
+                    # Extract tasks and sort them by task ID to maintain the initial order
+                    tasks = tasks_data.get('task_instances', [])
+                    tasks.sort(key=lambda task: task['task_id'])
+
+                    # Update the HTML content with the DAG run state and sorted tasks
+                    html_content = f"<h3>DAG Run State: {dag_state}</h3>"
+                    html_content += "<table><tr><th>Task</th><th>State</th></tr>"
+
+                    for task in tasks:
+                        color = "green" if task['state'] == 'success' else "red" if task['state'] == 'failed' else "orange"
+                        html_content += f"<tr><td>{task['task_id']}</td><td style='color: {color};'>{task['state']}</td></tr>"
+
+                    html_content += "</table>"
+
+                    # Clear and display the updated HTML content
+                    clear_output(wait=True)
+                    display(HTML(html_content))
+
+                    if dag_state in ['success', 'failed']:
+                        print(f"DAG run completed with state: {dag_state}. Monitoring stopped.")
+                        break
+                    elif dag_state != 'running':
+                        print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
+
+                except requests.RequestException as e:
+                    print(f"Error monitoring Airflow: {e}")
+
+                time.sleep(interval)
+        except KeyboardInterrupt:
+            print("Monitoring stopped.")
+
+
     def synthetize(self):
         """
         Triggers the data synthesis process.
@@ -673,11 +789,11 @@ class syntheticus_client:
 
             response = self.session.post(url, json=data)
             response.raise_for_status()
-
+            print(response.status_code)
             if response.status_code // 100 == 2:  # Check if status code is in the 2xx range
                 logging.info("Synthesis triggered successfully!")
                 if response.status_code // 100 == 2:
-                    monitor_thread = threading.Thread(target=self.monitor_airflow, args=(self.model_id, run_id,))
+                    monitor_thread = threading.Thread(target=self.monitor_airflow, args=(self.model_id, run_id))
                     monitor_thread.start()
                 return 'Synthesis triggered successfully!'
             else:

@@ -1,0 +1,45 @@
+{
+    "tables": {
+        "account": {
+            "primary_key": "account_id",
+            "fields": {
+                "account_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "district_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "frequency": {
+                    "type": "categorical"
+                },
+                "date": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                }
+            }
+        },
+        "card": {
+            "primary_key": "card_id",
+            "fields": {
+                "card_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "disp_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "type": {
+                    "type": "categorical"
+                },
+                "issued": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                }
+            }
+        }
+    }
+        
+}

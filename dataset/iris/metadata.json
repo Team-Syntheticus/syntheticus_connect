@@ -1,0 +1,23 @@
+{
+    "fields": {
+        "sepal.length": {
+            "type": "numerical",
+            "subtype":"float"
+        },
+        "sepal.width": {
+            "type": "numerical",
+            "subtype":"float"
+        },
+        "petal.length": {
+            "type": "numerical",
+            "subtype":"float"
+        }, 
+        "petal.width": {
+            "type": "numerical",
+            "subtype":"float"
+        },
+        "variety": {
+            "type": "categorical"
+        }
+    }   
+}

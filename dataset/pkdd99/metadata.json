@@ -1,0 +1,272 @@
+{
+    "tables": {
+        "account": {
+            "primary_key": "account_id",
+            "fields": {
+                "account_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "district_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "frequency": {
+                    "type": "categorical"
+                },
+                "date": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                }
+            }
+        },
+        "client": {
+            "primary_key": "client_id",
+            "fields": {
+                "client_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "birth_number": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "district_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                }
+            }
+        },
+        "card": {
+            "primary_key": "card_id",
+            "fields": {
+                "card_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "disp_id": {
+                    "type": "numerical",
+                    "subtype": "integer",
+                    "ref": {
+                        "table": "disp",
+                        "field": "disp_id"
+                    }
+                },
+                "type": {
+                    "type": "categorical"
+                },
+                "issued": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                }
+            }
+        },
+        "disp": {
+            "primary_key": "disp_id",
+            "fields": {
+                "disp_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "client_id": {
+                    "type": "numerical",
+                    "subtype": "integer",
+                    "ref": {
+                        "table": "client",
+                        "field": "client_id"
+                    }
+                },
+                "account_id": {
+                    "type": "numerical",
+                    "subtype": "integer",
+                    "ref": {
+                        "table": "account",
+                        "field": "account_id"
+                    }
+                },
+                "type": {
+                    "type": "categorical"
+                }
+            }
+        },
+        "district": {
+            "primary_key": "a1",
+            "fields": {
+                "a1": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a2": {
+                    "type": "categorical"
+                },
+                "a3": {
+                    "type": "categorical"
+                },
+                "a4": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a5": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a6": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a7": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a8": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a9": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a10": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a11": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a12": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a13": {
+                    "type": "numerical",
+                    "subtype": "float"
+                },
+                "a14": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a15": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "a16": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                }
+            }
+        },
+        "loan": {
+            "primary_key": "loan_id",
+            "fields": {
+                "loan_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "account_id": {
+                    "type": "numerical",
+                    "subtype": "integer",
+                    "ref": {
+                        "table": "account",
+                        "field": "account_id"
+                    }
+                },
+                "date": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "amount": {
+                    "type": "numerical",
+                    "subtype": "float"
+                },
+                "duration": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "payments": {
+                    "type": "numerical",
+                    "subtype": "float"
+                },
+                "status": {
+                    "type": "categorical"
+                }
+            }
+        },
+        "order": {
+            "primary_key": "order_id",
+            "fields": {
+                "order_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "account_id": {
+                    "type": "numerical",
+                    "subtype": "integer",
+                    "ref": {
+                        "table": "account",
+                        "field": "account_id"
+                    }
+                },
+                "bank_to": {
+                    "type": "categorical"
+                },
+                "account_to": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "amount": {
+                    "type": "numerical",
+                    "subtype": "float"
+                },
+                "k_symbol": {
+                    "type": "categorical"
+                }
+            }
+        },
+        "trans": {
+            "primary_key": "trans_id",
+            "fields": {
+                "trans_id": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "account_id": {
+                    "type": "numerical",
+                    "subtype": "integer",
+                    "ref": {
+                        "table": "account",
+                        "field": "account_id"
+                    }
+                },
+                "date": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                },
+                "type": {
+                    "type": "categorical"
+                },
+                "operation": {
+                    "type": "categorical"
+                },
+                "amount": {
+                    "type": "numerical",
+                    "subtype": "float"
+                },
+                "balance": {
+                    "type": "numerical",
+                    "subtype": "float"
+                },
+                "k_symbol": {
+                    "type": "categorical"
+                },
+                "bank": {
+                    "type": "categorical"
+                },
+                "account": {
+                    "type": "numerical",
+                    "subtype": "integer"
+                }
+            }
+        }
+    }
+}

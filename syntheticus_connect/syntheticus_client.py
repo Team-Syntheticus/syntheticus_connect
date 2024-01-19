@@ -575,139 +575,66 @@ class syntheticus_client:
             state = dag_run["state"]
             logging.info(f"Model run ID: {dag_run_id}, state: {state}")
 
-    # def fit(self):
-    #     """
-    #     Triggers the fit process for the selected model.
+    # def monitor_airflow(self, dag_id, run_id, interval=10):
+    #     """Monitor a specific DAG run in Airflow with color-coded visualization."""
+    #     airflow_base_url = f"{self.host_airflow}/api/v1"
 
-    #     Raises:
-    #         Exception: If an unexpected error occurs during the fit process.
-
-    #     Returns:
-    #         str: A message indicating the success or failure of the fit process.
-
-    #     """
-    #     url = f"{self.host_django}/api/projects/{self.project_id}/run-dag/"
-
-    #     payload = json.dumps({
-    #         "dag_name": f"{self.model_id}",
-    #     })
-    #     headers = {
-    #         'Content-Type': 'application/json',
-    #         'Authorization': f'Token {self.token}'
-    #     }
+    #     # Prepare HTML content and table structure outside the loop
+    #     html_content = ""
+    #     html_content += "<h3>DAG Run State: </h3>"
+    #     html_content += "<table><tr><th>Task</th><th>State</th></tr>"
 
     #     try:
-    #         response = requests.request("POST", url, headers=headers, data=payload)
-    #         response.raise_for_status()
+    #         while True:
+    #             try:
+    #                 # Fetch DAG run and task states
+    #                 dag_run_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}", auth=HTTPBasicAuth('airflow', 'airflow'))
+    #                 dag_run_response.raise_for_status()
+    #                 dag_run_data = dag_run_response.json()
+    #                 dag_state = dag_run_data.get('state')
 
-    #         # Join the response strings into one string
-    #         response_string = ''.join(json.loads(response.text))
+    #                 task_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}/taskInstances", auth=HTTPBasicAuth('airflow', 'airflow'))
+    #                 task_response.raise_for_status()
+    #                 tasks_data = task_response.json()
 
-    #         # Convert the JSON string into a dictionary
-    #         response_dict = json.loads(response_string)
+    #                 # Extract tasks and sort them by task ID to maintain the initial order
+    #                 tasks = tasks_data.get('task_instances', [])
+    #                 tasks.sort(key=lambda task: task['task_id'])
 
-    #         # Print the important information in a nice way
-    #         print(f"Project Name: {response_dict['conf']['project_name']}")
-    #         print(f"Model name: {response_dict['dag_id']}")
-    #         print(f"Model Run ID: {response_dict['dag_run_id']}")
-    #         print(f"Execution Date: {response_dict['execution_date']}")
-    #         print(f"State: {response_dict['state']}")
-    #         print('')
-    #         print('The fit process has been triggered successfully.')
-    #         return 'The fit process has been triggered successfully.'
+    #                 # Update the HTML content with the DAG run state and sorted tasks
+    #                 html_content = f"<h3>DAG Run State: {dag_state}</h3>"
+    #                 html_content += "<table><tr><th>Task</th><th>State</th></tr>"
 
-    #     except requests.exceptions.RequestException as err:
-    #         logging.error(f"An error occurred during the fit process: {err}")
-    #         return "An error occurred during the fit process."
-    
-    #### the following will be deprecated in future versions. Use django API instead.   
-    # def monitor_airflow(self, dag_id, run_id, interval=60):
-    #     """Monitor a specific DAG run in Airflow."""
-    #     airflow_base_url = f"{self.host_airflow}/api/v1"
-        
-    #     while True:
-    #         try:
-    #             response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}", auth=HTTPBasicAuth('airflow', 'airflow'))
-    #             data = response.json()
-    #             dag_state = data.get('state')
+    #                 for task in tasks:
+    #                     color = "green" if task['state'] == 'success' else "red" if task['state'] == 'failed' else "orange"
+    #                     html_content += f"<tr><td>{task['task_id']}</td><td style='color: {color};'>{task['state']}</td></tr>"
 
-    #             if dag_state == 'success':
-    #                 print("DAG run completed successfully. Monitoring stopped.")
-    #                 break  # This line stops the loop (and thus the thread) when DAG run is successful.
-    #             elif dag_state != 'running':
-    #                 print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
-    #         except Exception as e:
-    #             print(f"Error monitoring Airflow: {e}")
-            
-    #         time.sleep(interval)
-     
-    # def monitor_airflow(self,dag_id, run_id, interval=10):
-    #     """Monitor a specific DAG run in Airflow."""
-    #     airflow_base_url = f"{self.host_airflow}/api/v1"
-        
-    #     while True:
-    #         try:
-    #             response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}",
-    #                                     auth=HTTPBasicAuth('airflow', 'airflow'))
-    #             response.raise_for_status()
-    #             data = response.json()
-    #             dag_state = data.get('state')
-    #             # Log the status of each task
-    #             for task in data.get('tasks', []):
-    #                 print(f"Task {task['taskId']}: {task['state']}")
+    #                 html_content += "</table>"
 
-    #             if dag_state == 'success':
-    #                 print("DAG run completed successfully. Monitoring stopped.")
-    #                 break
-    #             elif dag_state != 'running':
-    #                 print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
-    #         except requests.RequestException as e:
-    #             print(f"Error monitoring Airflow: {e}")
+    #                 # Clear and display the updated HTML content
+    #                 clear_output(wait=True)
+    #                 display(HTML(html_content))
 
-    #         time.sleep(interval)
-     
-    # def monitor_airflow(self, dag_id, run_id, interval=10):
-    #     """Monitor a specific DAG run in Airflow."""
-    #     airflow_base_url = f"{self.host_airflow}/api/v1"
+    #                 if dag_state in ['success', 'failed']:
+    #                     print(f"DAG run completed with state: {dag_state}. Monitoring stopped.")
+    #                     break
+    #                 elif dag_state != 'running':
+    #                     print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
 
-    #     while True:
-    #         try:
-    #             # Request to get the state of the DAG run
-    #             dag_run_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}",
-    #                                             auth=HTTPBasicAuth('airflow', 'airflow'))
-    #             dag_run_response.raise_for_status()
-    #             dag_run_data = dag_run_response.json()
-    #             dag_state = dag_run_data.get('state')
+    #             except requests.RequestException as e:
+    #                 print(f"Error monitoring Airflow: {e}")
 
-    #             # Request to get the states of all tasks in the DAG run
-    #             task_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}/taskInstances",
-    #                                          auth=HTTPBasicAuth('airflow', 'airflow'))
-    #             task_response.raise_for_status()
-    #             tasks_data = task_response.json()
-
-    #             # Print the status of each task
-    #             print(f"DAG Run State: {dag_state}")
-    #             for task in tasks_data.get('task_instances', []):
-    #                 print(f"Task {task['task_id']}: {task['state']}")
-
-    #             if dag_state in ['success', 'failed']:
-    #                 print(f"DAG run completed with state: {dag_state}. Monitoring stopped.")
-    #                 break
-    #             elif dag_state != 'running':
-    #                 print(f"DAG run state changed to {dag_state}. Monitoring will continue.")
-
-    #         except requests.RequestException as e:
-    #             print(f"Error monitoring Airflow: {e}")
-
-    #         time.sleep(interval) 
+    #             time.sleep(interval)
+    #     except KeyboardInterrupt:
+    #         print("Monitoring stopped.")
 
     def monitor_airflow(self, dag_id, run_id, interval=10):
         """Monitor a specific DAG run in Airflow with color-coded visualization."""
         airflow_base_url = f"{self.host_airflow}/api/v1"
+        running_tasks_order = []  # List to maintain the order of tasks as they start running
 
-        # Prepare HTML content and table structure outside the loop
-        html_content = ""
-        html_content += "<h3>DAG Run State: </h3>"
+        # Prepare initial HTML content and table structure
+        html_content = "<h3>DAG Run State: </h3>"
         html_content += "<table><tr><th>Task</th><th>State</th></tr>"
 
         try:
@@ -717,27 +644,32 @@ class syntheticus_client:
                     dag_run_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}", auth=HTTPBasicAuth('airflow', 'airflow'))
                     dag_run_response.raise_for_status()
                     dag_run_data = dag_run_response.json()
-                    dag_state = dag_run_data.get('state')
 
                     task_response = requests.get(f"{airflow_base_url}/dags/{dag_id}/dagRuns/{run_id}/taskInstances", auth=HTTPBasicAuth('airflow', 'airflow'))
                     task_response.raise_for_status()
                     tasks_data = task_response.json()
 
-                    # Extract tasks and sort them by task ID to maintain the initial order
+                    dag_state = dag_run_data.get('state')
                     tasks = tasks_data.get('task_instances', [])
-                    tasks.sort(key=lambda task: task['task_id'])
 
-                    # Update the HTML content with the DAG run state and sorted tasks
+                    # Update the list of running and completed tasks
+                    for task in tasks:
+                        if task['task_id'] not in running_tasks_order and task['state'] in ['running', 'success', 'failed']:
+                            running_tasks_order.append(task['task_id'])
+
+                    # Update the HTML content
                     html_content = f"<h3>DAG Run State: {dag_state}</h3>"
                     html_content += "<table><tr><th>Task</th><th>State</th></tr>"
 
-                    for task in tasks:
-                        color = "green" if task['state'] == 'success' else "red" if task['state'] == 'failed' else "orange"
-                        html_content += f"<tr><td>{task['task_id']}</td><td style='color: {color};'>{task['state']}</td></tr>"
+                    for task_id in running_tasks_order:
+                        task = next((t for t in tasks if t['task_id'] == task_id), None)
+                        if task:
+                            color = "green" if task['state'] == 'success' else "red" if task['state'] == 'failed' else "orange"
+                            html_content += f"<tr><td>{task['task_id']}</td><td style='color: {color};'>{task['state']}</td></tr>"
 
                     html_content += "</table>"
 
-                    # Clear and display the updated HTML content
+                    # Display the updated HTML content
                     clear_output(wait=True)
                     display(HTML(html_content))
 
@@ -753,7 +685,6 @@ class syntheticus_client:
                 time.sleep(interval)
         except KeyboardInterrupt:
             print("Monitoring stopped.")
-
 
     def synthetize(self):
         """
